@@ -11,6 +11,9 @@ import {
   Check,
   X,
 } from "lucide-react";
+import { Authenticated, Unauthenticated } from "convex/react";
+import { SignInButton } from "@clerk/nextjs";
+
 import {
   Card,
   CardContent,
@@ -22,10 +25,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { ImagePrompt } from "@/lib/types";
 
 interface ImageGeneratorProps {
-  prompt: ImagePrompt;
+  prompt: any; // Type from Convex
   onBack: () => void;
 }
 
@@ -119,7 +121,7 @@ export default function ImageGenerator({
       });
 
       if (!response.ok) {
-        throw new Error("Failed to generate image");
+        throw new Error("Error al generar la imagen");
       }
 
       const data = await response.json();
@@ -137,14 +139,25 @@ export default function ImageGenerator({
       setGeneratedImages(imageUrls);
     } catch (error) {
       console.error("Error generating image:", error);
-      alert("Error generating image. Please try again.");
+      alert("Error al generar la imagen. Por favor, inténtalo de nuevo.");
     } finally {
       setIsGenerating(false);
     }
   };
 
   const isFormValid = () => {
-    return editablePrompt.trim() !== "";
+    // Check if prompt is not empty
+    if (editablePrompt.trim() === "") return false;
+
+    // Check if required image inputs are provided
+    const requiredImageInputs = prompt.inputs.filter(
+      (input: any) => input.type === "image" && input.required
+    );
+    if (requiredImageInputs.length > 0 && uploadedImages.length === 0) {
+      return false;
+    }
+
+    return true;
   };
 
   const downloadImage = (imageUrl: string, index: number) => {
@@ -174,7 +187,7 @@ export default function ImageGenerator({
       <div className="mb-8">
         <Button variant="ghost" onClick={onBack} className="mb-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Catalog
+          Volver al Catálogo
         </Button>
 
         <div className="flex items-start gap-6">
@@ -202,7 +215,7 @@ export default function ImageGenerator({
             </div>
 
             <div className="flex flex-wrap gap-1 mb-4">
-              {prompt.tags.map((tag) => (
+              {prompt.tags.map((tag: string) => (
                 <Badge key={tag} variant="secondary" className="text-xs">
                   {tag}
                 </Badge>
@@ -211,7 +224,7 @@ export default function ImageGenerator({
 
             {prompt.author && (
               <p className="text-sm text-gray-500">
-                Created by {prompt.author}
+                Creado por {prompt.author}
               </p>
             )}
           </div>
@@ -222,74 +235,129 @@ export default function ImageGenerator({
         {/* Input Form */}
         <Card>
           <CardHeader>
-            <CardTitle>Configure Your Generation</CardTitle>
+            <CardTitle>Configura tu Generación</CardTitle>
             <CardDescription>
-              Edit the prompt below and optionally add images to generate your
-              AI image. You can modify anything between [ ] to customize it to
-              your style.
+              {prompt.inputs.length === 0
+                ? "Edita el prompt a continuación para generar tu imagen de IA. Puedes modificar cualquier cosa entre [ ] para personalizarlo a tu estilo."
+                : "Configura las entradas a continuación y edita el prompt para generar tu imagen de IA. Completa los campos obligatorios y modifica cualquier cosa entre [ ] para personalizarlo a tu estilo."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Image Upload Section */}
-            <div className="space-y-4">
-              <Label>Upload Images (Optional)</Label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-                <input
-                  type="file"
-                  id="image-upload"
-                  accept="image/jpeg,image/jpg,image/png,image/gif,image/bmp"
-                  multiple
-                  onChange={(e) => {
-                    if (e.target.files) {
-                      handleImageUpload(e.target.files);
-                    }
-                  }}
-                  className="hidden"
-                />
-                <label htmlFor="image-upload" className="cursor-pointer">
-                  <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                  <p className="text-sm text-gray-600">
-                    Click to upload images or drag and drop
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Supported formats: JPEG, PNG, GIF, BMP (Max 10MB each)
-                  </p>
-                </label>
-              </div>
-
-              {/* Uploaded Images Preview */}
-              {uploadedImages.length > 0 && (
-                <div className="grid grid-cols-2 gap-4">
-                  {uploadedImages.map((file, index) => (
-                    <div key={index} className="relative">
-                      <Image
-                        src={URL.createObjectURL(file)}
-                        alt={`Uploaded ${index + 1}`}
-                        width={150}
-                        height={100}
-                        className="rounded-lg object-cover w-full h-24"
-                      />
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="absolute top-2 right-2 h-6 w-6 p-0 rounded-full"
-                        onClick={() => removeImage(index)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                      <p className="text-xs text-gray-500 mt-1 truncate">
-                        {file.name}
-                      </p>
-                    </div>
-                  ))}
+            {/* Image Upload Section - Only show if prompt has image inputs */}
+            {prompt.inputs.some((input: any) => input.type === "image") && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Subir Imágenes</Label>
+                  {/* Show descriptions for each image input */}
+                  <div className="space-y-1">
+                    {prompt.inputs
+                      .filter((input: any) => input.type === "image")
+                      .map((input: any, index: number) => (
+                        <p key={input.key} className="text-sm text-gray-600">
+                          <span className="font-medium">
+                            {input.required ? "Obligatorio" : "Opcional"}:
+                          </span>{" "}
+                          {input.description}
+                        </p>
+                      ))}
+                  </div>
                 </div>
-              )}
-            </div>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                  <input
+                    type="file"
+                    id="image-upload"
+                    accept="image/jpeg,image/jpg,image/png,image/gif,image/bmp"
+                    multiple
+                    onChange={(e) => {
+                      if (e.target.files) {
+                        handleImageUpload(e.target.files);
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  <label htmlFor="image-upload" className="cursor-pointer">
+                    <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-600">
+                      Haz clic para subir imágenes o arrastra y suelta
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Formatos soportados: JPEG, PNG, GIF, BMP (Máx 10MB cada
+                      uno)
+                    </p>
+                  </label>
+                </div>
+
+                {/* Uploaded Images Preview */}
+                {uploadedImages.length > 0 && (
+                  <div className="grid grid-cols-2 gap-4">
+                    {uploadedImages.map((file, index) => (
+                      <div key={index} className="relative">
+                        <Image
+                          src={URL.createObjectURL(file)}
+                          alt={`Subido ${index + 1}`}
+                          width={150}
+                          height={100}
+                          className="rounded-lg object-cover w-full h-24"
+                        />
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="absolute top-2 right-2 h-6 w-6 p-0 rounded-full"
+                          onClick={() => removeImage(index)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                        <p className="text-xs text-gray-500 mt-1 truncate">
+                          {file.name}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Customization Instructions - Show if prompt has text inputs */}
+            {prompt.inputs.some((input: any) => input.type === "text") && (
+              <div className="space-y-2">
+                <Label>Instrucciones de Personalización</Label>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
+                  <p className="text-sm text-blue-800 font-medium">
+                    Puedes personalizar lo siguiente en el editor de prompts de
+                    abajo:
+                  </p>
+                  <ul className="space-y-1">
+                    {prompt.inputs
+                      .filter((input: any) => input.type === "text")
+                      .map((input: any) => (
+                        <li key={input.key} className="text-sm text-blue-700">
+                          <span className="font-medium">•</span>{" "}
+                          <span className="font-medium">
+                            {input.description}:
+                          </span>{" "}
+                          {input.placeholder && (
+                            <span className="italic">
+                              Busca [{input.placeholder}] en el prompt y
+                              reemplázalo con el valor deseado
+                            </span>
+                          )}
+                          {input.required && (
+                            <span className="text-red-600 font-medium">
+                              {" "}
+                              (Obligatorio)
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              </div>
+            )}
 
             {/* Editable Prompt */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="prompt-editor">Prompt Editor</Label>
+                <Label htmlFor="prompt-editor">Editor de Prompt</Label>
                 <Button
                   variant="outline"
                   size="sm"
@@ -299,49 +367,57 @@ export default function ImageGenerator({
                   {isCopied ? (
                     <>
                       <Check className="h-3 w-3 mr-1" />
-                      Copied
+                      Copiado
                     </>
                   ) : (
                     <>
                       <Copy className="h-3 w-3 mr-1" />
-                      Copy
+                      Copiar
                     </>
                   )}
                 </Button>
               </div>
               <Textarea
                 id="prompt-editor"
-                placeholder="Edit your prompt here..."
+                placeholder="Edita tu prompt aquí..."
                 value={editablePrompt}
                 onChange={(e) => setEditablePrompt(e.target.value)}
                 className="min-h-[120px] font-mono text-sm"
               />
             </div>
-
-            <Button
-              onClick={handleGenerate}
-              disabled={!isFormValid() || isGenerating}
-              className="w-full"
-              size="lg"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                "Generate Image"
-              )}
-            </Button>
+            <Authenticated>
+              <Button
+                onClick={handleGenerate}
+                disabled={!isFormValid() || isGenerating}
+                className="w-full"
+                size="lg"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generando...
+                  </>
+                ) : (
+                  "Generar Imagen"
+                )}
+              </Button>
+            </Authenticated>
+            <Unauthenticated>
+              <SignInButton>
+                <Button className="w-full" size="lg">
+                  Iniciar Sesión para Generar
+                </Button>
+              </SignInButton>
+            </Unauthenticated>
           </CardContent>
         </Card>
 
         {/* Results */}
         <Card>
           <CardHeader>
-            <CardTitle>Generated Results</CardTitle>
+            <CardTitle>Resultados Generados</CardTitle>
             <CardDescription>
-              Your AI-generated images will appear here
+              Tus imágenes generadas por IA aparecerán aquí
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -365,7 +441,7 @@ export default function ImageGenerator({
                       className="w-full"
                     >
                       <Download className="h-4 w-4 mr-2" />
-                      Download Image {index + 1}
+                      Descargar Imagen {index + 1}
                     </Button>
                   </div>
                 ))}
@@ -374,7 +450,8 @@ export default function ImageGenerator({
               <div className="text-center py-12 text-gray-500">
                 <div className="text-4xl mb-4">🎨</div>
                 <p>
-                  Edit your prompt and click "Generate Image" to see results
+                  Edita tu prompt y haz clic en "Generar Imagen" para ver los
+                  resultados
                 </p>
               </div>
             )}

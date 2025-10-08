@@ -30,8 +30,36 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { aiImagePrompts, getAllCategories, searchPrompts } from "@/lib/prompts";
-import type { ImagePrompt } from "@/lib/types";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { PromptGridSkeleton } from "@/components/skeletons/prompt-grid-skeleton";
+
+// Utility functions
+const getAllCategories = (prompts: any[]) => {
+  return [...new Set(prompts.map((prompt) => prompt.category))].sort();
+};
+
+const searchPrompts = (
+  prompts: any[],
+  searchQuery: string,
+  selectedCategory: string
+) => {
+  return prompts.filter((prompt) => {
+    const matchesSearch =
+      searchQuery === "" ||
+      prompt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      prompt.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      prompt.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      prompt.tags.some((tag: string) =>
+        tag.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+
+    const matchesCategory =
+      selectedCategory === "All" || prompt.category === selectedCategory;
+
+    return matchesSearch && matchesCategory;
+  });
+};
 
 const getDifficultyColor = (difficulty: string) => {
   switch (difficulty) {
@@ -66,17 +94,25 @@ export default function GridPrompts() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
-  const categories = ["All", ...getAllCategories()];
+  const prompts = useQuery(api.prompts.getPrompts);
+
+  const safePrompts = prompts || [];
+
+  const categories = ["All", ...getAllCategories(safePrompts)];
 
   const filteredPrompts = useMemo(() => {
-    return searchPrompts(searchQuery, selectedCategory);
-  }, [searchQuery, selectedCategory]);
+    return searchPrompts(safePrompts, searchQuery, selectedCategory);
+  }, [safePrompts, searchQuery, selectedCategory]);
 
   // Calculate pagination
   const totalPages = Math.ceil(filteredPrompts.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentPrompts = filteredPrompts.slice(startIndex, endIndex);
+
+  if (prompts === undefined) {
+    return <PromptGridSkeleton />;
+  }
 
   // Reset to first page when filters change
   const handleSearchChange = (value: string) => {
@@ -89,7 +125,7 @@ export default function GridPrompts() {
     setCurrentPage(1);
   };
 
-  const handlePromptSelect = (prompt: ImagePrompt) => {
+  const handlePromptSelect = (prompt: any) => {
     router.push(`/generator?id=${prompt.id}`);
   };
 
@@ -97,8 +133,8 @@ export default function GridPrompts() {
     <div className="w-full max-w-7xl mx-auto px-4 py-8">
       <div className="mb-8">
         <p className="text-sm sm:text-base lg:text-lg text-gray-800">
-          Discover and explore {aiImagePrompts.length} AI image generation
-          prompts across different categories
+          Descubre y explora {safePrompts.length} prompts de generación de
+          imágenes de IA en diferentes categorías
         </p>
       </div>
 
@@ -107,7 +143,7 @@ export default function GridPrompts() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
-            placeholder="Search prompts, categories, or tags..."
+            placeholder="Buscar prompts, categorías o etiquetas..."
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-10"
@@ -116,7 +152,7 @@ export default function GridPrompts() {
         <Select value={selectedCategory} onValueChange={handleCategoryChange}>
           <SelectTrigger className="w-full sm:w-64">
             <Filter className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Select category" />
+            <SelectValue placeholder="Seleccionar categoría" />
           </SelectTrigger>
           <SelectContent>
             {categories.map((category) => (
@@ -131,9 +167,9 @@ export default function GridPrompts() {
       {/* Results Count */}
       <div className="mb-6">
         <p className="text-sm text-gray-600">
-          Showing {currentPrompts.length} of {filteredPrompts.length} prompts
-          {selectedCategory !== "All" && ` in ${selectedCategory}`}
-          {totalPages > 1 && ` (Page ${currentPage} of ${totalPages})`}
+          Mostrando {currentPrompts.length} de {filteredPrompts.length} prompts
+          {selectedCategory !== "All" && ` en ${selectedCategory}`}
+          {totalPages > 1 && ` (Página ${currentPage} de ${totalPages})`}
         </p>
       </div>
 
@@ -178,7 +214,7 @@ export default function GridPrompts() {
 
               <div className="space-y-3">
                 <div className="flex flex-wrap gap-1">
-                  {prompt.tags.slice(0, 3).map((tag) => (
+                  {prompt.tags.slice(0, 3).map((tag: string) => (
                     <Badge key={tag} variant="secondary" className="text-xs">
                       {tag}
                     </Badge>
@@ -192,11 +228,11 @@ export default function GridPrompts() {
 
                 <div className="flex items-center justify-between text-xs text-gray-500">
                   <span className="flex items-center gap-1">
-                    📝 {prompt.inputs.length} input
+                    📝 {prompt.inputs.length} entrada
                     {prompt.inputs.length !== 1 ? "s" : ""}
                   </span>
                   {prompt.author && (
-                    <span className="truncate">by {prompt.author}</span>
+                    <span className="truncate">por {prompt.author}</span>
                   )}
                 </div>
               </div>
@@ -290,10 +326,10 @@ export default function GridPrompts() {
         <div className="text-center py-12">
           <div className="text-6xl mb-4">🔍</div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            No prompts found
+            No se encontraron prompts
           </h3>
           <p className="text-gray-600 mb-4">
-            Try adjusting your search terms or category filter
+            Intenta ajustar tus términos de búsqueda o filtro de categoría
           </p>
           <Button
             variant="outline"
@@ -303,7 +339,7 @@ export default function GridPrompts() {
               setCurrentPage(1);
             }}
           >
-            Clear filters
+            Limpiar filtros
           </Button>
         </div>
       )}

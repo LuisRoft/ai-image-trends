@@ -19,11 +19,11 @@ interface PromptCardProps {
   getDifficultyIcon: (difficulty: string) => string;
 }
 
-export default function PromptCard({ 
-  prompt, 
-  onSelect, 
-  getDifficultyColor, 
-  getDifficultyIcon 
+export default function PromptCard({
+  prompt,
+  onSelect,
+  getDifficultyColor,
+  getDifficultyIcon,
 }: PromptCardProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -39,7 +39,7 @@ export default function PromptCard({
       },
       {
         threshold: 0.1,
-        rootMargin: '50px'
+        rootMargin: "50px",
       }
     );
 
@@ -51,7 +51,7 @@ export default function PromptCard({
   }, []);
 
   return (
-    <Card 
+    <Card
       ref={cardRef}
       className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
       onClick={() => onSelect(prompt)}
@@ -61,7 +61,7 @@ export default function PromptCard({
           <>
             {!imageLoaded && (
               <div className="w-full h-48 bg-gray-200 animate-pulse flex items-center justify-center">
-                <div className="text-gray-400 text-sm">Loading...</div>
+                <div className="text-gray-400 text-sm">Cargando...</div>
               </div>
             )}
             <Image
@@ -70,7 +70,7 @@ export default function PromptCard({
               width={500}
               height={300}
               className={`w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300 ${
-                imageLoaded ? 'opacity-100' : 'opacity-0'
+                imageLoaded ? "opacity-100" : "opacity-0"
               }`}
               onLoad={() => setImageLoaded(true)}
               loading="lazy"
@@ -87,7 +87,7 @@ export default function PromptCard({
           </Badge>
         </div>
       </div>
-      
+
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-lg line-clamp-2 group-hover:text-blue-600 transition-colors">
@@ -98,12 +98,12 @@ export default function PromptCard({
           {prompt.category}
         </Badge>
       </CardHeader>
-      
+
       <CardContent className="pt-0">
         <CardDescription className="line-clamp-3 text-sm mb-4">
           {prompt.description}
         </CardDescription>
-        
+
         <div className="space-y-3">
           <div className="flex flex-wrap gap-1">
             {prompt.tags.slice(0, 3).map((tag) => (
@@ -117,15 +117,14 @@ export default function PromptCard({
               </Badge>
             )}
           </div>
-          
+
           <div className="flex items-center justify-between text-xs text-gray-500">
             <span className="flex items-center gap-1">
-              📝 {prompt.inputs.length} input{prompt.inputs.length !== 1 ? 's' : ''}
+              📝 {prompt.inputs.length} entrada
+              {prompt.inputs.length !== 1 ? "s" : ""}
             </span>
             {prompt.author && (
-              <span className="truncate">
-                by {prompt.author}
-              </span>
+              <span className="truncate">por {prompt.author}</span>
             )}
           </div>
         </div>

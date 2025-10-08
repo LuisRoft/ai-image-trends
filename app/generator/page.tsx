@@ -3,16 +3,25 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
 import ImageGenerator from "@/components/image-generator";
-import { aiImagePrompts } from "@/lib/prompts";
-import type { ImagePrompt } from "@/lib/types";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { ImageGeneratorSkeleton } from "@/components/skeletons/image-generator-skeleton";
 
 function GeneratorContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const promptId = searchParams.get("id");
 
+  // Get prompts from Convex
+  const prompts = useQuery(api.prompts.getPrompts);
+
+  // Show skeleton while loading
+  if (prompts === undefined) {
+    return <ImageGeneratorSkeleton />;
+  }
+
   // Find the prompt by ID
-  const prompt = aiImagePrompts.find((p) => p.id === promptId);
+  const prompt = prompts.find((p) => p.id === promptId);
 
   if (!prompt) {
     return (
