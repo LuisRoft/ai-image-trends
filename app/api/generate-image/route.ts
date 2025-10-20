@@ -70,6 +70,7 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const prompt = formData.get("prompt") as string;
     const images = formData.getAll("images") as File[];
+    const aspectRatio = (formData.get("aspectRatio") as string) || "1:1";
 
     // Initialize Google GenAI with user's API key
     const genAI = new GoogleGenAI({ apiKey: userApiKeyData.apiKey });
@@ -85,7 +86,10 @@ export async function POST(request: Request) {
         contents: [{ parts: [textPart, ...imageParts] }],
         config: {
           responseModalities: [Modality.IMAGE, Modality.TEXT],
-        },
+          imageConfig: {
+            aspectRatio: aspectRatio,
+          },
+        } as any, // Type assertion needed as imageConfig is not in TypeScript definitions yet
       });
 
     const result: Part[] = response.candidates?.[0]?.content?.parts || [];

@@ -29,6 +29,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ImageGeneratorProps {
   prompt: any; // Type from Convex
@@ -65,7 +72,7 @@ export default function ImageGenerator({
   prompt,
   onBack,
 }: ImageGeneratorProps) {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const router = useRouter();
   const [editablePrompt, setEditablePrompt] = useState(prompt.prompt);
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
@@ -73,12 +80,19 @@ export default function ImageGenerator({
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [isCopied, setIsCopied] = useState(false);
   const [apiKeyError, setApiKeyError] = useState<string | null>(null);
+  const [aspectRatio, setAspectRatio] = useState<string>("1:1");
 
-  // Check if user has configured their API key
-  const userApiKey = useQuery(api.userApiKeys.getApiKey);
+  // Check if user has configured their API key - only query if user is logged in
+  const userApiKey = useQuery(
+    api.userApiKeys.getApiKey,
+    isLoaded && user ? {} : "skip"
+  );
 
   const hasApiKey =
-    userApiKey !== undefined && userApiKey !== null && userApiKey.hasKey;
+    user &&
+    userApiKey !== undefined &&
+    userApiKey !== null &&
+    userApiKey.hasKey;
 
   const handleImageUpload = (files: FileList) => {
     const validFiles: File[] = [];
@@ -123,6 +137,7 @@ export default function ImageGenerator({
     try {
       const formDataToSend = new FormData();
       formDataToSend.append("prompt", editablePrompt);
+      formDataToSend.append("aspectRatio", aspectRatio);
 
       // Add uploaded images
       uploadedImages.forEach((file) => {
@@ -414,6 +429,103 @@ export default function ImageGenerator({
                 className="min-h-[120px] font-mono text-sm"
               />
             </div>
+
+            {/* Aspect Ratio Selector */}
+            <div className="space-y-2">
+              <Label htmlFor="aspect-ratio">Relación de Aspecto</Label>
+              <Select value={aspectRatio} onValueChange={setAspectRatio}>
+                <SelectTrigger id="aspect-ratio">
+                  <SelectValue placeholder="Selecciona la relación de aspecto" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1:1">
+                    <div className="flex items-center justify-between w-full">
+                      <span>1:1 (Cuadrado)</span>
+                      <span className="text-xs text-gray-500 ml-4">
+                        1024x1024
+                      </span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="2:3">
+                    <div className="flex items-center justify-between w-full">
+                      <span>2:3 (Retrato)</span>
+                      <span className="text-xs text-gray-500 ml-4">
+                        832x1248
+                      </span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="3:2">
+                    <div className="flex items-center justify-between w-full">
+                      <span>3:2 (Paisaje)</span>
+                      <span className="text-xs text-gray-500 ml-4">
+                        1248x832
+                      </span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="3:4">
+                    <div className="flex items-center justify-between w-full">
+                      <span>3:4 (Retrato)</span>
+                      <span className="text-xs text-gray-500 ml-4">
+                        864x1184
+                      </span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="4:3">
+                    <div className="flex items-center justify-between w-full">
+                      <span>4:3 (Paisaje)</span>
+                      <span className="text-xs text-gray-500 ml-4">
+                        1184x864
+                      </span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="4:5">
+                    <div className="flex items-center justify-between w-full">
+                      <span>4:5 (Retrato)</span>
+                      <span className="text-xs text-gray-500 ml-4">
+                        896x1152
+                      </span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="5:4">
+                    <div className="flex items-center justify-between w-full">
+                      <span>5:4 (Paisaje)</span>
+                      <span className="text-xs text-gray-500 ml-4">
+                        1152x896
+                      </span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="9:16">
+                    <div className="flex items-center justify-between w-full">
+                      <span>9:16 (Vertical)</span>
+                      <span className="text-xs text-gray-500 ml-4">
+                        768x1344
+                      </span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="16:9">
+                    <div className="flex items-center justify-between w-full">
+                      <span>16:9 (Widescreen)</span>
+                      <span className="text-xs text-gray-500 ml-4">
+                        1344x768
+                      </span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="21:9">
+                    <div className="flex items-center justify-between w-full">
+                      <span>21:9 (Ultra-wide)</span>
+                      <span className="text-xs text-gray-500 ml-4">
+                        1536x672
+                      </span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500">
+                Selecciona la relación de aspecto deseada para tu imagen
+                generada
+              </p>
+            </div>
+
             <Authenticated>
               {/* API Key Warning */}
               {!hasApiKey && (

@@ -1,13 +1,9 @@
-"use client";
-
 import { Github, Twitter, Linkedin, Settings, User } from "lucide-react";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function HeaderDev() {
-  const router = useRouter();
-
   return (
     <header className="flex justify-between items-center gap-2 py-8 text-gray-800">
       <h1 className="text-xl font-semibold">AImage</h1>
@@ -40,7 +36,7 @@ export default function HeaderDev() {
         </div>
         <SignedOut>
           <SignInButton mode="modal">
-            <Button size="sm">
+            <Button size="sm" variant="outline">
               <User className="h-4 w-4 mr-2" />
               Iniciar Sesión
             </Button>
@@ -48,12 +44,10 @@ export default function HeaderDev() {
         </SignedOut>
         <SignedIn>
           <UserButton afterSignOutUrl="/" />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.push("/settings")}
-          >
-            <Settings className="h-4 w-4" />
+          <Button variant="outline" size="sm">
+            <Link href="/settings">
+              <Settings className="h-4 w-4" />
+            </Link>
           </Button>
         </SignedIn>
       </div>
