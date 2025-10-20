@@ -25,8 +25,6 @@ Explora y edita los prompts más populares del momento para transformar tus foto
 3. **Explora los Prompts** disponibles en la biblioteca
 4. **Genera Imágenes** personalizadas con AI
 
-📖 Para más detalles, consulta la [Guía de Configuración](./SETUP_GUIDE.md)
-
 ### Para Desarrolladores
 
 #### Prerrequisitos
