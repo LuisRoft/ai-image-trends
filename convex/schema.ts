@@ -24,4 +24,11 @@ export default defineSchema({
     sourceUrl: v.string(),
     imageUrl: v.string(),
   }).index("by_prompt_id", ["id"]),
+
+  userApiKeys: defineTable({
+    userId: v.string(),
+    geminiApiKey: v.string(), // Encriptada
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_user_id", ["userId"]),
 });

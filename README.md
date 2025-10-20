@@ -1,36 +1,144 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AImage - Biblioteca de Prompts y Generador de Imágenes AI
 
-## Getting Started
+Explora y edita los prompts más populares del momento para transformar tus fotos en estilos únicos (anime, cartoon, realista y más). Genera imágenes al instante o guarda tus favoritos. Powered by Google Gemini AI.
 
-First, run the development server:
+## 🌟 Características
+
+- 📚 **Biblioteca de Prompts**: Explora prompts curados para diferentes estilos de imagen
+- 🎨 **Generación de Imágenes AI**: Genera imágenes usando Google Gemini 2.5 Flash Image Preview
+- 🔐 **API Keys Personales**: Cada usuario usa su propia API key (sin costos para el propietario)
+- ✏️ **Editor de Prompts**: Personaliza y edita prompts antes de generar
+- 🖼️ **Soporte Multi-imagen**: Sube múltiples imágenes de referencia
+- 💾 **Descarga Directa**: Descarga las imágenes generadas instantáneamente
+- 🔒 **Autenticación Segura**: Powered by Clerk
+- 📊 **Base de Datos en Tiempo Real**: Convex para almacenamiento y sincronización
+
+## 🚀 Inicio Rápido
+
+### Para Usuarios
+
+1. **Regístrate o Inicia Sesión**
+2. **Configura tu API Key de Gemini**:
+   - Ve a [Google AI Studio](https://aistudio.google.com/apikey)
+   - Obtén tu API key gratuita
+   - En la app, ve a "Configuración" y pega tu API key
+3. **Explora los Prompts** disponibles en la biblioteca
+4. **Genera Imágenes** personalizadas con AI
+
+📖 Para más detalles, consulta la [Guía de Configuración](./SETUP_GUIDE.md)
+
+### Para Desarrolladores
+
+#### Prerrequisitos
+
+- Node.js 18+
+- pnpm (recomendado) o npm
+- Cuenta de [Convex](https://convex.dev)
+- Cuenta de [Clerk](https://clerk.com)
+
+#### Instalación
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# Clonar el repositorio
+git clone https://github.com/LuisRoft/ai-image-trends.git
+cd ai-image-trends
+
+# Instalar dependencias
+pnpm install
+
+# Configurar variables de entorno
+cp .env.example .env.local
+# Edita .env.local con tus credenciales
+
+# Iniciar Convex
+npx convex dev
+
+# En otra terminal, iniciar Next.js
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+#### Variables de Entorno
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+# Convex
+NEXT_PUBLIC_CONVEX_URL=tu_convex_url
+CONVEX_DEPLOYMENT=tu_deployment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Clerk
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=tu_clerk_key
+CLERK_SECRET_KEY=tu_clerk_secret
 
-## Learn More
+# Opcional: Encriptación (cambia en producción)
+ENCRYPTION_SECRET=tu-clave-segura-de-encriptacion
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 🏗️ Stack Tecnológico
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Framework**: Next.js 15 (App Router + Turbopack)
+- **UI**: React 19, Tailwind CSS, shadcn/ui
+- **Autenticación**: Clerk
+- **Base de Datos**: Convex
+- **IA**: Google Gemini AI (2.5 Flash Image Preview)
+- **Deployment**: Vercel (recomendado)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📁 Estructura del Proyecto
 
-## Deploy on Vercel
+```
+ai-image-trends/
+├── app/
+│   ├── api/
+│   │   └── generate-image/     # Endpoint de generación de imágenes
+│   ├── generator/              # Página de generación
+│   ├── settings/               # Configuración de usuario
+│   └── page.tsx                # Página principal
+├── components/
+│   ├── api-key-settings.tsx    # Gestión de API keys
+│   ├── image-generator.tsx     # Componente generador
+│   ├── grid-prompts.tsx        # Grid de prompts
+│   └── ui/                     # Componentes shadcn
+├── convex/
+│   ├── prompts.ts              # Queries de prompts
+│   ├── userApiKeys.ts          # Gestión de API keys
+│   └── schema.ts               # Schema de la DB
+└── lib/
+    └── utils.ts                # Utilidades
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🔐 Seguridad
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Las API keys se almacenan **encriptadas con AES-256** en Convex
+- Encriptación simple y robusta usando crypto-js
+- Autenticación obligatoria para generación de imágenes
+- Cada usuario usa su propia API key (sin compartir costos)
+- Solo el propietario puede acceder a su API key
+- Seguridad de nivel empresarial con código mantenible
+
+## 📝 Licencia
+
+Este proyecto es open source. Ver [LICENSE](./LICENSE) para más detalles.
+
+## 👨‍💻 Autor
+
+Creado por [LuisRoftl](https://luisroftl.vercel.app)
+
+- Twitter: [@luisroftl](https://x.com/luisroftl)
+- GitHub: [@LuisRoft](https://github.com/LuisRoft)
+- LinkedIn: [luisvelasco27](https://www.linkedin.com/in/luisvelasco27/)
+
+## 🤝 Contribuciones
+
+Las contribuciones son bienvenidas! Por favor:
+
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
+
+## ⭐ Soporte
+
+Si este proyecto te fue útil, considera darle una ⭐ en GitHub!
+
+---
+
+**Powered by Google Gemini AI** 🚀

@@ -5,12 +5,11 @@ import {
   Modality,
 } from "@google/genai";
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "@/convex/_generated/api";
 
-if (!process.env.API_KEY) {
-  throw new Error("Missing API_KEY");
-}
-
-const genAI = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 const fileToGenerativePart = async (file: File) => {
   const buffer = await file.arrayBuffer();
@@ -38,9 +37,42 @@ const fileToGenerativePart = async (file: File) => {
 
 export async function POST(request: Request) {
   try {
+    // Authenticate user
+    const { userId } = await auth();
+
+    if (!userId) {
+      return NextResponse.json(
+        {
+          error: "Unauthorized",
+          details: "You must be logged in to generate images",
+        },
+        { status: 401 }
+      );
+    }
+
+    // Get user's API key from Convex
+    const userApiKeyData = await convex.query(api.userApiKeys.getActualApiKey, {
+      userId,
+    });
+
+    if (!userApiKeyData || !userApiKeyData.apiKey) {
+      return NextResponse.json(
+        {
+          error: "API Key not configured",
+          details:
+            "Please configure your Gemini API key in settings to generate images",
+          needsApiKey: true,
+        },
+        { status: 403 }
+      );
+    }
+
     const formData = await request.formData();
     const prompt = formData.get("prompt") as string;
     const images = formData.getAll("images") as File[];
+
+    // Initialize Google GenAI with user's API key
+    const genAI = new GoogleGenAI({ apiKey: userApiKeyData.apiKey });
 
     const imageParts = await Promise.all(
       images.map((file) => fileToGenerativePart(file))
@@ -63,6 +95,23 @@ export async function POST(request: Request) {
     console.error("Error generating image:", error);
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occurred";
+
+    // Check if error is related to invalid API key
+    if (
+      errorMessage.includes("API key") ||
+      errorMessage.includes("authentication")
+    ) {
+      return NextResponse.json(
+        {
+          error: "Invalid API Key",
+          details:
+            "Your API key appears to be invalid. Please check your settings and update it.",
+          invalidApiKey: true,
+        },
+        { status: 403 }
+      );
+    }
+
     return NextResponse.json(
       { error: "Internal Server Error", details: errorMessage },
       { status: 500 }

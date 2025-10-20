@@ -10,9 +10,13 @@ import {
   Copy,
   Check,
   X,
+  Settings,
+  AlertCircle,
 } from "lucide-react";
-import { Authenticated, Unauthenticated } from "convex/react";
-import { SignInButton } from "@clerk/nextjs";
+import { Authenticated, Unauthenticated, useQuery } from "convex/react";
+import { SignInButton, useUser } from "@clerk/nextjs";
+import { api } from "@/convex/_generated/api";
+import { useRouter } from "next/navigation";
 
 import {
   Card,
@@ -61,11 +65,23 @@ export default function ImageGenerator({
   prompt,
   onBack,
 }: ImageGeneratorProps) {
+  const { user } = useUser();
+  const router = useRouter();
   const [editablePrompt, setEditablePrompt] = useState(prompt.prompt);
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [isCopied, setIsCopied] = useState(false);
+  const [apiKeyError, setApiKeyError] = useState<string | null>(null);
+
+  // Check if user has configured their API key
+  const userApiKey = useQuery(
+    api.userApiKeys.getApiKey,
+    user?.id ? { userId: user.id } : "skip"
+  );
+
+  const hasApiKey =
+    userApiKey !== undefined && userApiKey !== null && userApiKey.hasKey;
 
   const handleImageUpload = (files: FileList) => {
     const validFiles: File[] = [];
@@ -106,6 +122,7 @@ export default function ImageGenerator({
 
   const handleGenerate = async () => {
     setIsGenerating(true);
+    setApiKeyError(null);
     try {
       const formDataToSend = new FormData();
       formDataToSend.append("prompt", editablePrompt);
@@ -120,11 +137,24 @@ export default function ImageGenerator({
         body: formDataToSend,
       });
 
-      if (!response.ok) {
-        throw new Error("Error al generar la imagen");
-      }
-
       const data = await response.json();
+
+      if (!response.ok) {
+        // Handle specific error cases
+        if (data.needsApiKey) {
+          setApiKeyError(
+            "No tienes una API key configurada. Por favor, ve a configuración para agregar tu API key de Gemini."
+          );
+          return;
+        }
+        if (data.invalidApiKey) {
+          setApiKeyError(
+            "Tu API key es inválida. Por favor, verifica tu configuración y actualízala."
+          );
+          return;
+        }
+        throw new Error(data.details || "Error al generar la imagen");
+      }
 
       // Extract image data from the response
       const imageResults = data.result.filter(
@@ -139,7 +169,9 @@ export default function ImageGenerator({
       setGeneratedImages(imageUrls);
     } catch (error) {
       console.error("Error generating image:", error);
-      alert("Error al generar la imagen. Por favor, inténtalo de nuevo.");
+      if (!apiKeyError) {
+        alert("Error al generar la imagen. Por favor, inténtalo de nuevo.");
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -386,9 +418,58 @@ export default function ImageGenerator({
               />
             </div>
             <Authenticated>
+              {/* API Key Warning */}
+              {!hasApiKey && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <h4 className="font-medium text-yellow-900 mb-1">
+                        API Key no configurada
+                      </h4>
+                      <p className="text-sm text-yellow-800 mb-3">
+                        Para generar imágenes necesitas configurar tu API key
+                        personal de Google Gemini.
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => router.push("/settings")}
+                        className="bg-white hover:bg-yellow-50 border-yellow-300"
+                      >
+                        <Settings className="h-4 w-4 mr-2" />
+                        Ir a Configuración
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* API Key Error */}
+              {apiKeyError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <h4 className="font-medium text-red-900 mb-1">Error</h4>
+                      <p className="text-sm text-red-800 mb-3">{apiKeyError}</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => router.push("/settings")}
+                        className="bg-white hover:bg-red-50 border-red-300"
+                      >
+                        <Settings className="h-4 w-4 mr-2" />
+                        Ir a Configuración
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <Button
                 onClick={handleGenerate}
-                disabled={!isFormValid() || isGenerating}
+                disabled={!isFormValid() || isGenerating || !hasApiKey}
                 className="w-full"
                 size="lg"
               >

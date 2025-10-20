@@ -14,6 +14,7 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as prompts from "../prompts.js";
+import type * as userApiKeys from "../userApiKeys.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -25,6 +26,7 @@ import type * as prompts from "../prompts.js";
  */
 declare const fullApi: ApiFromModules<{
   prompts: typeof prompts;
+  userApiKeys: typeof userApiKeys;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,
