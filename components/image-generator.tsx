@@ -640,7 +640,7 @@ export default function ImageGenerator({
               <div className="text-center py-12 text-gray-500">
                 <div className="text-4xl mb-4">🎨</div>
                 <p>
-                  Edita tu prompt y haz clic en "Generar Imagen" para ver los
+                  Edita tu prompt y haz clic en 'Generar Imagen' para ver los
                   resultados
                 </p>
               </div>
