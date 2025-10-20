@@ -75,10 +75,7 @@ export default function ImageGenerator({
   const [apiKeyError, setApiKeyError] = useState<string | null>(null);
 
   // Check if user has configured their API key
-  const userApiKey = useQuery(
-    api.userApiKeys.getApiKey,
-    user?.id ? { userId: user.id } : "skip"
-  );
+  const userApiKey = useQuery(api.userApiKeys.getApiKey);
 
   const hasApiKey =
     userApiKey !== undefined && userApiKey !== null && userApiKey.hasKey;

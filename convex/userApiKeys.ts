@@ -45,17 +45,25 @@ function decryptApiKey(encryptedData: string): string {
 // Save or update user's Gemini API key
 export const saveApiKey = mutation({
   args: {
-    userId: v.string(),
     apiKey: v.string(),
   },
   handler: async (ctx, args) => {
+    // Get authenticated user from Clerk
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      throw new Error("Unauthorized: You must be logged in to save an API key");
+    }
+
+    const userId = identity.subject; // This is the Clerk user ID
+
     // Encrypt the API key before storing
     const encryptedKey = encryptApiKey(args.apiKey);
 
     // Check if user already has an API key
     const existingKey = await ctx.db
       .query("userApiKeys")
-      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
       .first();
 
     if (existingKey) {
@@ -68,7 +76,7 @@ export const saveApiKey = mutation({
     } else {
       // Insert new key
       await ctx.db.insert("userApiKeys", {
-        userId: args.userId,
+        userId: userId,
         geminiApiKey: encryptedKey,
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -80,13 +88,20 @@ export const saveApiKey = mutation({
 
 // Get user's Gemini API key (returns masked version for display)
 export const getApiKey = query({
-  args: {
-    userId: v.string(),
-  },
-  handler: async (ctx, args) => {
+  args: {},
+  handler: async (ctx) => {
+    // Get authenticated user from Clerk
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      throw new Error("Unauthorized: You must be logged in");
+    }
+
+    const userId = identity.subject;
+
     const apiKeyDoc = await ctx.db
       .query("userApiKeys")
-      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
       .first();
 
     if (!apiKeyDoc) {
@@ -114,6 +129,8 @@ export const getActualApiKey = query({
     userId: v.string(),
   },
   handler: async (ctx, args) => {
+    // This query is called from the API route with the authenticated userId
+    // No need to re-verify here since auth is already done in the API route
     const apiKeyDoc = await ctx.db
       .query("userApiKeys")
       .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
@@ -131,13 +148,20 @@ export const getActualApiKey = query({
 
 // Delete user's API key
 export const deleteApiKey = mutation({
-  args: {
-    userId: v.string(),
-  },
-  handler: async (ctx, args) => {
+  args: {},
+  handler: async (ctx) => {
+    // Get authenticated user from Clerk
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      throw new Error("Unauthorized: You must be logged in");
+    }
+
+    const userId = identity.subject;
+
     const apiKeyDoc = await ctx.db
       .query("userApiKeys")
-      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
       .first();
 
     if (apiKeyDoc) {

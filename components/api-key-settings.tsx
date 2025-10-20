@@ -53,10 +53,7 @@ export default function ApiKeySettings() {
 
   const saveApiKey = useMutation(api.userApiKeys.saveApiKey);
   const deleteApiKey = useMutation(api.userApiKeys.deleteApiKey);
-  const existingApiKey = useQuery(
-    api.userApiKeys.getApiKey,
-    user?.id ? { userId: user.id } : "skip"
-  );
+  const existingApiKey = useQuery(api.userApiKeys.getApiKey);
 
   const handleSave = async () => {
     if (!user?.id) return;
@@ -72,7 +69,7 @@ export default function ApiKeySettings() {
     setMessage(null);
 
     try {
-      await saveApiKey({ userId: user.id, apiKey: apiKey.trim() });
+      await saveApiKey({ apiKey: apiKey.trim() });
       setMessage({ type: "success", text: "API key guardada exitosamente" });
       setApiKey("");
       setShowApiKey(false);
@@ -91,7 +88,7 @@ export default function ApiKeySettings() {
     setShowDeleteDialog(false);
 
     try {
-      await deleteApiKey({ userId: user.id });
+      await deleteApiKey();
       setMessage({ type: "success", text: "API key eliminada exitosamente" });
     } catch (error) {
       setMessage({ type: "error", text: "Error al eliminar la API key" });
