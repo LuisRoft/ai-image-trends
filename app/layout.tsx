@@ -71,7 +71,7 @@ export default function RootLayout({
           <ClerkProvider
             appearance={{
               baseTheme: shadcn,
-              layout: { logoImageUrl: "./ia-logo.png" },
+              layout: { logoImageUrl: "./favicon.svg" },
             }}
           >
             <ConvexClientProvider>

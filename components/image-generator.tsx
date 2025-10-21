@@ -593,7 +593,7 @@ export default function ImageGenerator({
               </Button>
             </Authenticated>
             <Unauthenticated>
-              <SignInButton>
+              <SignInButton mode="modal">
                 <Button className="w-full" size="lg">
                   Iniciar Sesión para Generar
                 </Button>
