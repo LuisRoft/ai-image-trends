@@ -3,11 +3,11 @@ import {
   GenerateContentResponse,
   Part,
   Modality,
-} from "@google/genai";
-import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import { ConvexHttpClient } from "convex/browser";
-import { api } from "@/convex/_generated/api";
+} from '@google/genai';
+import { NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
+import { ConvexHttpClient } from 'convex/browser';
+import { api } from '@/convex/_generated/api';
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
@@ -17,19 +17,19 @@ const fileToGenerativePart = async (file: File) => {
 
   // Map unsupported formats to supported ones
   const supportedFormats = [
-    "image/jpeg",
-    "image/png",
-    "image/gif",
-    "image/bmp",
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/bmp',
   ];
 
   if (!supportedFormats.includes(file.type)) {
     // For unsupported formats like AVIF, WebP, treat as JPEG
-    mimeType = "image/jpeg";
+    mimeType = 'image/jpeg';
     console.warn(`Unsupported image format ${file.type}, treating as JPEG`);
   }
 
-  const base64EncodedData = Buffer.from(buffer).toString("base64");
+  const base64EncodedData = Buffer.from(buffer).toString('base64');
   return {
     inlineData: { data: base64EncodedData, mimeType },
   };
@@ -43,8 +43,8 @@ export async function POST(request: Request) {
     if (!userId) {
       return NextResponse.json(
         {
-          error: "Unauthorized",
-          details: "You must be logged in to generate images",
+          error: 'Unauthorized',
+          details: 'You must be logged in to generate images',
         },
         { status: 401 }
       );
@@ -58,9 +58,9 @@ export async function POST(request: Request) {
     if (!userApiKeyData || !userApiKeyData.apiKey) {
       return NextResponse.json(
         {
-          error: "API Key not configured",
+          error: 'API Key not configured',
           details:
-            "Please configure your Gemini API key in settings to generate images",
+            'Please configure your Gemini API key in settings to generate images',
           needsApiKey: true,
         },
         { status: 403 }
@@ -68,9 +68,9 @@ export async function POST(request: Request) {
     }
 
     const formData = await request.formData();
-    const prompt = formData.get("prompt") as string;
-    const images = formData.getAll("images") as File[];
-    const aspectRatio = (formData.get("aspectRatio") as string) || "1:1";
+    const prompt = formData.get('prompt') as string;
+    const images = formData.getAll('images') as File[];
+    const aspectRatio = (formData.get('aspectRatio') as string) || '1:1';
 
     // Initialize Google GenAI with user's API key
     const genAI = new GoogleGenAI({ apiKey: userApiKeyData.apiKey });
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
 
     const response: GenerateContentResponse =
       await genAI.models.generateContent({
-        model: "gemini-2.5-flash-image-preview",
+        model: 'gemini-3-pro-image-preview',
         contents: [{ parts: [textPart, ...imageParts] }],
         config: {
           responseModalities: [Modality.IMAGE, Modality.TEXT],
@@ -96,20 +96,20 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ result });
   } catch (error) {
-    console.error("Error generating image:", error);
+    console.error('Error generating image:', error);
     const errorMessage =
-      error instanceof Error ? error.message : "An unknown error occurred";
+      error instanceof Error ? error.message : 'An unknown error occurred';
 
     // Check if error is related to invalid API key
     if (
-      errorMessage.includes("API key") ||
-      errorMessage.includes("authentication")
+      errorMessage.includes('API key') ||
+      errorMessage.includes('authentication')
     ) {
       return NextResponse.json(
         {
-          error: "Invalid API Key",
+          error: 'Invalid API Key',
           details:
-            "Your API key appears to be invalid. Please check your settings and update it.",
+            'Your API key appears to be invalid. Please check your settings and update it.',
           invalidApiKey: true,
         },
         { status: 403 }
@@ -117,7 +117,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(
-      { error: "Internal Server Error", details: errorMessage },
+      { error: 'Internal Server Error', details: errorMessage },
       { status: 500 }
     );
   }
