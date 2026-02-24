@@ -1,0 +1,80 @@
+name: CI Quality
+
+on:
+  pull_request:
+    branches: ["main"]
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  react-doctor:
+    name: React Doctor
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Run React Doctor action
+        uses: millionco/react-doctor@main
+        with:
+          diff: ${{ github.event_name == 'pull_request' && github.base_ref || 'main' }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          verbose: true
+
+  verify-build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: react-doctor
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build (includes React Doctor quality gate)
+        env:
+          REACT_DOCTOR_MIN_SCORE: "75"
+        run: pnpm run build
+
+  lint-report:
+    name: Lint (report only)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm run lint
