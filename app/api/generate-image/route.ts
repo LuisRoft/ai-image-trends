@@ -10,6 +10,8 @@ import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+const VALID_MODELS = ['gemini-2.5-flash-image', 'gemini-3-pro-image-preview'];
+const VALID_IMAGE_SIZES = ['1K', '2K', '4K'] as const;
 
 const fileToGenerativePart = async (file: File) => {
   const buffer = await file.arrayBuffer();
@@ -37,8 +39,9 @@ const fileToGenerativePart = async (file: File) => {
 
 export async function POST(request: Request) {
   try {
-    // Authenticate user
-    const { userId } = await auth();
+    // Start independent work in parallel to reduce route latency.
+    const [authData, formData] = await Promise.all([auth(), request.formData()]);
+    const { userId } = authData;
 
     if (!userId) {
       return NextResponse.json(
@@ -67,10 +70,33 @@ export async function POST(request: Request) {
       );
     }
 
-    const formData = await request.formData();
     const prompt = formData.get('prompt') as string;
     const images = formData.getAll('images') as File[];
     const aspectRatio = (formData.get('aspectRatio') as string) || '1:1';
+    const imageSize = (formData.get('imageSize') as string) || '1K';
+    const model = (formData.get('model') as string) || 'gemini-2.5-flash-image';
+
+    // Validate model selection
+    const selectedModel = VALID_MODELS.includes(model)
+      ? model
+      : 'gemini-2.5-flash-image';
+    const selectedImageSize = VALID_IMAGE_SIZES.includes(
+      imageSize as (typeof VALID_IMAGE_SIZES)[number]
+    )
+      ? imageSize
+      : '1K';
+    const normalizedImageSize =
+      selectedModel === 'gemini-3-pro-image-preview' ? selectedImageSize : '1K';
+
+    if (!prompt?.trim()) {
+      return NextResponse.json(
+        {
+          error: 'Invalid prompt',
+          details: 'Prompt cannot be empty',
+        },
+        { status: 400 }
+      );
+    }
 
     // Initialize Google GenAI with user's API key
     const genAI = new GoogleGenAI({ apiKey: userApiKeyData.apiKey });
@@ -82,12 +108,13 @@ export async function POST(request: Request) {
 
     const response: GenerateContentResponse =
       await genAI.models.generateContent({
-        model: 'gemini-3-pro-image-preview',
+        model: selectedModel,
         contents: [{ parts: [textPart, ...imageParts] }],
         config: {
           responseModalities: [Modality.IMAGE, Modality.TEXT],
           imageConfig: {
             aspectRatio: aspectRatio,
+            imageSize: normalizedImageSize,
           },
         } as any, // Type assertion needed as imageConfig is not in TypeScript definitions yet
       });
@@ -113,6 +140,20 @@ export async function POST(request: Request) {
           invalidApiKey: true,
         },
         { status: 403 }
+      );
+    }
+
+    if (
+      errorMessage.includes('is not found for API version') ||
+      errorMessage.includes('NOT_FOUND')
+    ) {
+      return NextResponse.json(
+        {
+          error: 'Model not available',
+          details:
+            'The selected model is not available for your current Gemini API access. Try another model.',
+        },
+        { status: 400 }
       );
     }
 

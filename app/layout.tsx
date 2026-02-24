@@ -5,6 +5,7 @@ import HeaderDev from '@/components/header-dev';
 import ConvexClientProvider from './ConvexClientProvider';
 import { ClerkProvider } from '@clerk/nextjs';
 import { shadcn } from '@clerk/themes';
+import { Toaster } from '@/components/ui/sonner';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -79,6 +80,7 @@ export default function RootLayout({
               {children}
             </ConvexClientProvider>
           </ClerkProvider>
+          <Toaster position="top-right" richColors closeButton />
         </div>
       </body>
     </html>

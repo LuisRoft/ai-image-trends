@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import {
   ArrowLeft,
@@ -12,11 +12,14 @@ import {
   X,
   Settings,
   AlertCircle,
+  Sparkles,
+  Zap,
 } from "lucide-react";
 import { Authenticated, Unauthenticated, useQuery } from "convex/react";
 import { SignInButton, useUser } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import {
   Card,
@@ -41,6 +44,35 @@ interface ImageGeneratorProps {
   prompt: any; // Type from Convex
   onBack: () => void;
 }
+
+const SUPPORTED_IMAGE_FORMATS = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/gif",
+  "image/bmp",
+];
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+const modelOptions = [
+  {
+    value: "gemini-2.5-flash-image",
+    label: "Flash (Rápido)",
+    description: "Generación rápida, ideal para iteraciones",
+    icon: Zap,
+    maxImages: 3,
+    supportedSizes: ["1K"] as const,
+  },
+  {
+    value: "gemini-3-pro-image-preview",
+    label: "Pro (Avanzado)",
+    description: "Alta calidad, hasta 4K, pensamiento avanzado",
+    icon: Sparkles,
+    maxImages: 14,
+    supportedSizes: ["1K", "2K", "4K"] as const,
+  },
+];
 
 const getDifficultyColor = (difficulty: string) => {
   switch (difficulty) {
@@ -81,6 +113,8 @@ export default function ImageGenerator({
   const [isCopied, setIsCopied] = useState(false);
   const [apiKeyError, setApiKeyError] = useState<string | null>(null);
   const [aspectRatio, setAspectRatio] = useState<string>("1:1");
+  const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-image");
+  const [imageSize, setImageSize] = useState<string>("1K");
 
   // Check if user has configured their API key - only query if user is logged in
   const userApiKey = useQuery(
@@ -94,30 +128,48 @@ export default function ImageGenerator({
     userApiKey !== null &&
     userApiKey.hasKey;
 
+  const currentModel = useMemo(
+    () => modelOptions.find((m) => m.value === selectedModel) ?? modelOptions[0],
+    [selectedModel]
+  );
+
+  const previewUrls = useMemo(
+    () => uploadedImages.map((file) => URL.createObjectURL(file)),
+    [uploadedImages]
+  );
+
+  useEffect(() => {
+    return () => {
+      previewUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [previewUrls]);
+
   const handleImageUpload = (files: FileList) => {
     const validFiles: File[] = [];
+    const maxImages = currentModel.maxImages;
+
+    // Check if adding these files would exceed the limit
+    if (uploadedImages.length + files.length > maxImages) {
+      toast.error(`Límite de imágenes excedido`, {
+        description: `El modelo ${currentModel?.label} permite máximo ${maxImages} imágenes de referencia.`,
+      });
+      return;
+    }
 
     Array.from(files).forEach((file) => {
       // Check if the file format is supported
-      const supportedFormats = [
-        "image/jpeg",
-        "image/jpg",
-        "image/png",
-        "image/gif",
-        "image/bmp",
-      ];
-
-      if (!supportedFormats.includes(file.type)) {
-        alert(
-          `El formato ${file.type} no es compatible. Por favor, usa JPEG, PNG, GIF o BMP.`
-        );
+      if (!SUPPORTED_IMAGE_FORMATS.includes(file.type)) {
+        toast.error(`Formato no compatible`, {
+          description: `El formato ${file.type} no es compatible. Usa JPEG, PNG, GIF o BMP.`,
+        });
         return;
       }
 
       // Check file size (max 10MB)
-      const maxSize = 10 * 1024 * 1024; // 10MB
-      if (file.size > maxSize) {
-        alert("El archivo es demasiado grande. El tamaño máximo es 10MB.");
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(`Archivo muy grande`, {
+          description: `El archivo "${file.name}" excede el límite de 10MB.`,
+        });
         return;
       }
 
@@ -134,10 +186,17 @@ export default function ImageGenerator({
   const handleGenerate = async () => {
     setIsGenerating(true);
     setApiKeyError(null);
+    
+    const loadingToast = toast.loading("Generando imagen...", {
+      description: `Usando modelo ${currentModel.label}`,
+    });
+    
     try {
       const formDataToSend = new FormData();
       formDataToSend.append("prompt", editablePrompt);
       formDataToSend.append("aspectRatio", aspectRatio);
+      formDataToSend.append("imageSize", imageSize);
+      formDataToSend.append("model", selectedModel);
 
       // Add uploaded images
       uploadedImages.forEach((file) => {
@@ -154,12 +213,28 @@ export default function ImageGenerator({
       if (!response.ok) {
         // Handle specific error cases
         if (data.needsApiKey) {
+          toast.dismiss(loadingToast);
+          toast.error("API Key no configurada", {
+            description: "Ve a configuración para agregar tu API key de Gemini.",
+            action: {
+              label: "Configurar",
+              onClick: () => router.push("/settings"),
+            },
+          });
           setApiKeyError(
             "No tienes una API key configurada. Por favor, ve a configuración para agregar tu API key de Gemini."
           );
           return;
         }
         if (data.invalidApiKey) {
+          toast.dismiss(loadingToast);
+          toast.error("API Key inválida", {
+            description: "Verifica tu configuración y actualiza tu API key.",
+            action: {
+              label: "Configurar",
+              onClick: () => router.push("/settings"),
+            },
+          });
           setApiKeyError(
             "Tu API key es inválida. Por favor, verifica tu configuración y actualízala."
           );
@@ -179,10 +254,17 @@ export default function ImageGenerator({
       );
 
       setGeneratedImages(imageUrls);
+      toast.dismiss(loadingToast);
+      toast.success("¡Imagen generada!", {
+        description: `Se generó ${imageUrls.length} imagen(es) correctamente.`,
+      });
     } catch (error) {
       console.error("Error generating image:", error);
+      toast.dismiss(loadingToast);
       if (!apiKeyError) {
-        alert("Error al generar la imagen. Por favor, inténtalo de nuevo.");
+        toast.error("Error al generar", {
+          description: error instanceof Error ? error.message : "Por favor, inténtalo de nuevo.",
+        });
       }
     } finally {
       setIsGenerating(false);
@@ -219,9 +301,15 @@ export default function ImageGenerator({
     try {
       await navigator.clipboard.writeText(editablePrompt);
       setIsCopied(true);
+      toast.success("Prompt copiado", {
+        description: "El prompt ha sido copiado al portapapeles.",
+      });
       setTimeout(() => setIsCopied(false), 2000);
     } catch (err) {
       console.error("Failed to copy text: ", err);
+      toast.error("Error al copiar", {
+        description: "No se pudo copiar el prompt al portapapeles.",
+      });
     }
   };
 
@@ -337,7 +425,7 @@ export default function ImageGenerator({
                     {uploadedImages.map((file, index) => (
                       <div key={index} className="relative">
                         <Image
-                          src={URL.createObjectURL(file)}
+                          src={previewUrls[index]!}
                           alt={`Subido ${index + 1}`}
                           width={150}
                           height={100}
@@ -428,6 +516,89 @@ export default function ImageGenerator({
                 onChange={(e) => setEditablePrompt(e.target.value)}
                 className="min-h-[120px] font-mono text-sm"
               />
+            </div>
+
+            {/* Model Selector */}
+            <div className="space-y-3">
+              <Label>Modelo de Generación</Label>
+              <div className="grid grid-cols-2 gap-3">
+                {modelOptions.map((model) => {
+                  const IconComponent = model.icon;
+                  const isSelected = selectedModel === model.value;
+                  return (
+                    <button
+                      key={model.value}
+                      type="button"
+                      onClick={() => {
+                        setSelectedModel(model.value);
+                        const nextDefaultSize = model.supportedSizes[0];
+                        if (!model.supportedSizes.some((size) => size === imageSize)) {
+                          setImageSize(nextDefaultSize);
+                        }
+                        // Clear images if exceeding new model limit
+                        if (uploadedImages.length > model.maxImages) {
+                          setUploadedImages((prev) => prev.slice(0, model.maxImages));
+                          toast.info("Imágenes ajustadas", {
+                            description: `Se removieron imágenes para cumplir el límite de ${model.maxImages} del modelo ${model.label}.`,
+                          });
+                        }
+                      }}
+                      className={`relative flex flex-col items-start p-4 rounded-lg border-2 transition-all text-left ${
+                        isSelected
+                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <IconComponent
+                          className={`h-4 w-4 ${
+                            isSelected ? "text-primary" : "text-gray-500"
+                          }`}
+                        />
+                        <span
+                          className={`font-medium ${
+                            isSelected ? "text-primary" : "text-gray-900"
+                          }`}
+                        >
+                          {model.label}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500">{model.description}</p>
+                      <span className="text-xs text-gray-400 mt-1">
+                        Máx. {model.maxImages} imágenes
+                      </span>
+                      {isSelected && (
+                        <div className="absolute top-2 right-2">
+                          <Check className="h-4 w-4 text-primary" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-gray-500">
+                Flash es más rápido para iteraciones. Pro ofrece mayor calidad y resolución hasta 4K.
+              </p>
+            </div>
+
+            {/* Image Size Selector */}
+            <div className="space-y-2">
+              <Label htmlFor="image-size">Resolución de salida</Label>
+              <Select value={imageSize} onValueChange={setImageSize}>
+                <SelectTrigger id="image-size">
+                  <SelectValue placeholder="Selecciona la resolución" />
+                </SelectTrigger>
+                <SelectContent>
+                  {currentModel.supportedSizes.map((size) => (
+                    <SelectItem key={size} value={size}>
+                      {size}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500">
+                Si envías imagen de referencia, Gemini puede mantener su tamaño original por defecto. Esta opción fuerza la resolución de salida cuando el modelo lo soporta.
+              </p>
             </div>
 
             {/* Aspect Ratio Selector */}
