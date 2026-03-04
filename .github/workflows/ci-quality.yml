@@ -20,12 +20,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Run React Doctor action
+      - name: Run React Doctor
+        id: doctor
         uses: millionco/react-doctor@main
         with:
           diff: ${{ github.event_name == 'pull_request' && github.base_ref || 'main' }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           verbose: true
+
+      - name: Enforce minimum score
+        run: |
+          SCORE="${{ steps.doctor.outputs.score }}"
+          if [ -z "$SCORE" ] || [ "$SCORE" -lt 75 ]; then
+            echo "::error::React Doctor score $SCORE is below minimum 75"
+            exit 1
+          fi
 
   verify-build:
     name: Build
