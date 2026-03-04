@@ -52,6 +52,8 @@ jobs:
       - name: Build (includes React Doctor quality gate)
         env:
           REACT_DOCTOR_MIN_SCORE: "75"
+          NEXT_PUBLIC_CONVEX_URL: ${{ secrets.NEXT_PUBLIC_CONVEX_URL }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
         run: pnpm run build
 
   lint-report:
