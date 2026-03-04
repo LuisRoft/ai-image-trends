@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useState, useRef, useEffect } from "react";
-import Image from "next/image";
+import { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import type { ImagePrompt } from "@/lib/types";
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import type { ImagePrompt } from '@/lib/types';
 
 interface PromptCardProps {
   prompt: ImagePrompt;
@@ -39,7 +39,7 @@ export default function PromptCard({
       },
       {
         threshold: 0.1,
-        rootMargin: "50px",
+        rootMargin: '50px',
       }
     );
 
@@ -70,7 +70,7 @@ export default function PromptCard({
               width={500}
               height={300}
               className={`w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300 ${
-                imageLoaded ? "opacity-100" : "opacity-0"
+                imageLoaded ? 'opacity-100' : 'opacity-0'
               }`}
               onLoad={() => setImageLoaded(true)}
               loading="lazy"
@@ -121,7 +121,7 @@ export default function PromptCard({
           <div className="flex items-center justify-between text-xs text-gray-500">
             <span className="flex items-center gap-1">
               📝 {prompt.inputs.length} entrada
-              {prompt.inputs.length !== 1 ? "s" : ""}
+              {prompt.inputs.length !== 1 ? 's' : ''}
             </span>
             {prompt.author && (
               <span className="truncate">por {prompt.author}</span>

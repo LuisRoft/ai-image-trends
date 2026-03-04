@@ -1,7 +1,7 @@
-import { Github, Twitter, Linkedin, Settings, User } from "lucide-react";
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Github, Twitter, Linkedin, Settings, User } from 'lucide-react';
+import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function HeaderDev() {
   return (

@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
-import Image from "next/image";
+import { useEffect, useMemo, useState } from 'react';
+import Image from 'next/image';
 import {
   ArrowLeft,
   Upload,
@@ -14,12 +14,12 @@ import {
   AlertCircle,
   Sparkles,
   Zap,
-} from "lucide-react";
-import { Authenticated, Unauthenticated, useQuery } from "convex/react";
-import { SignInButton, useUser } from "@clerk/nextjs";
-import { api } from "@/convex/_generated/api";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+} from 'lucide-react';
+import { Authenticated, Unauthenticated, useQuery } from 'convex/react';
+import { SignInButton, useUser } from '@clerk/nextjs';
+import { api } from '@/convex/_generated/api';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 import {
   Card,
@@ -27,19 +27,19 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import type { Doc } from "@/convex/_generated/dataModel";
+} from '@/components/ui/select';
+import type { Doc } from '@/convex/_generated/dataModel';
 
 interface PromptInput {
   key: string;
@@ -50,62 +50,62 @@ interface PromptInput {
 }
 
 interface ImageGeneratorProps {
-  prompt: Doc<"prompts">;
+  prompt: Doc<'prompts'>;
   onBack: () => void;
 }
 
 const SUPPORTED_IMAGE_FORMATS = [
-  "image/jpeg",
-  "image/jpg",
-  "image/png",
-  "image/gif",
-  "image/bmp",
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/gif',
+  'image/bmp',
 ];
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 const modelOptions = [
   {
-    value: "gemini-2.5-flash-image",
-    label: "Flash (Rápido)",
-    description: "Generación rápida, ideal para iteraciones",
+    value: 'gemini-2.5-flash-image',
+    label: 'Flash (Rápido)',
+    description: 'Generación rápida, ideal para iteraciones',
     icon: Zap,
     maxImages: 3,
-    supportedSizes: ["1K"] as const,
+    supportedSizes: ['1K'] as const,
   },
   {
-    value: "gemini-3-pro-image-preview",
-    label: "Pro (Avanzado)",
-    description: "Alta calidad, hasta 4K, pensamiento avanzado",
+    value: 'gemini-3-pro-image-preview',
+    label: 'Pro (Avanzado)',
+    description: 'Alta calidad, hasta 4K, pensamiento avanzado',
     icon: Sparkles,
     maxImages: 14,
-    supportedSizes: ["1K", "2K", "4K"] as const,
+    supportedSizes: ['1K', '2K', '4K'] as const,
   },
 ];
 
 const getDifficultyColor = (difficulty: string) => {
   switch (difficulty) {
-    case "easy":
-      return "bg-green-100 text-green-800";
-    case "medium":
-      return "bg-yellow-100 text-yellow-800";
-    case "hard":
-      return "bg-red-100 text-red-800";
+    case 'easy':
+      return 'bg-green-100 text-green-800';
+    case 'medium':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'hard':
+      return 'bg-red-100 text-red-800';
     default:
-      return "bg-gray-100 text-gray-800";
+      return 'bg-gray-100 text-gray-800';
   }
 };
 
 const getDifficultyIcon = (difficulty: string) => {
   switch (difficulty) {
-    case "easy":
-      return "●";
-    case "medium":
-      return "●●";
-    case "hard":
-      return "●●●";
+    case 'easy':
+      return '●';
+    case 'medium':
+      return '●●';
+    case 'hard':
+      return '●●●';
     default:
-      return "●";
+      return '●';
   }
 };
 
@@ -121,14 +121,16 @@ export default function ImageGenerator({
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [isCopied, setIsCopied] = useState(false);
   const [apiKeyError, setApiKeyError] = useState<string | null>(null);
-  const [aspectRatio, setAspectRatio] = useState<string>("1:1");
-  const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-image");
-  const [imageSize, setImageSize] = useState<string>("1K");
+  const [aspectRatio, setAspectRatio] = useState<string>('1:1');
+  const [selectedModel, setSelectedModel] = useState<string>(
+    'gemini-2.5-flash-image'
+  );
+  const [imageSize, setImageSize] = useState<string>('1K');
 
   // Check if user has configured their API key - only query if user is logged in
   const userApiKey = useQuery(
     api.userApiKeys.getApiKey,
-    isLoaded && user ? {} : "skip"
+    isLoaded && user ? {} : 'skip'
   );
 
   const hasApiKey =
@@ -138,7 +140,8 @@ export default function ImageGenerator({
     userApiKey.hasKey;
 
   const currentModel = useMemo(
-    () => modelOptions.find((m) => m.value === selectedModel) ?? modelOptions[0],
+    () =>
+      modelOptions.find((m) => m.value === selectedModel) ?? modelOptions[0],
     [selectedModel]
   );
 
@@ -195,25 +198,25 @@ export default function ImageGenerator({
   const handleGenerate = async () => {
     setIsGenerating(true);
     setApiKeyError(null);
-    
-    const loadingToast = toast.loading("Generando imagen...", {
+
+    const loadingToast = toast.loading('Generando imagen...', {
       description: `Usando modelo ${currentModel.label}`,
     });
-    
+
     try {
       const formDataToSend = new FormData();
-      formDataToSend.append("prompt", editablePrompt);
-      formDataToSend.append("aspectRatio", aspectRatio);
-      formDataToSend.append("imageSize", imageSize);
-      formDataToSend.append("model", selectedModel);
+      formDataToSend.append('prompt', editablePrompt);
+      formDataToSend.append('aspectRatio', aspectRatio);
+      formDataToSend.append('imageSize', imageSize);
+      formDataToSend.append('model', selectedModel);
 
       // Add uploaded images
       uploadedImages.forEach((file) => {
-        formDataToSend.append("images", file);
+        formDataToSend.append('images', file);
       });
 
-      const response = await fetch("/api/generate-image", {
-        method: "POST",
+      const response = await fetch('/api/generate-image', {
+        method: 'POST',
         body: formDataToSend,
       });
 
@@ -223,33 +226,34 @@ export default function ImageGenerator({
         // Handle specific error cases
         if (data.needsApiKey) {
           toast.dismiss(loadingToast);
-          toast.error("API Key no configurada", {
-            description: "Ve a configuración para agregar tu API key de Gemini.",
+          toast.error('API Key no configurada', {
+            description:
+              'Ve a configuración para agregar tu API key de Gemini.',
             action: {
-              label: "Configurar",
-              onClick: () => router.push("/settings"),
+              label: 'Configurar',
+              onClick: () => router.push('/settings'),
             },
           });
           setApiKeyError(
-            "No tienes una API key configurada. Por favor, ve a configuración para agregar tu API key de Gemini."
+            'No tienes una API key configurada. Por favor, ve a configuración para agregar tu API key de Gemini.'
           );
           return;
         }
         if (data.invalidApiKey) {
           toast.dismiss(loadingToast);
-          toast.error("API Key inválida", {
-            description: "Verifica tu configuración y actualiza tu API key.",
+          toast.error('API Key inválida', {
+            description: 'Verifica tu configuración y actualiza tu API key.',
             action: {
-              label: "Configurar",
-              onClick: () => router.push("/settings"),
+              label: 'Configurar',
+              onClick: () => router.push('/settings'),
             },
           });
           setApiKeyError(
-            "Tu API key es inválida. Por favor, verifica tu configuración y actualízala."
+            'Tu API key es inválida. Por favor, verifica tu configuración y actualízala.'
           );
           return;
         }
-        throw new Error(data.details || "Error al generar la imagen");
+        throw new Error(data.details || 'Error al generar la imagen');
       }
 
       // Extract image data from the response
@@ -258,7 +262,7 @@ export default function ImageGenerator({
       }
       const imageResults = (data.result as ImagePart[]).filter(
         (part) =>
-          part.inlineData && part.inlineData.mimeType.startsWith("image/")
+          part.inlineData && part.inlineData.mimeType.startsWith('image/')
       );
       const imageUrls = imageResults.map(
         (part) =>
@@ -267,15 +271,18 @@ export default function ImageGenerator({
 
       setGeneratedImages(imageUrls);
       toast.dismiss(loadingToast);
-      toast.success("¡Imagen generada!", {
+      toast.success('¡Imagen generada!', {
         description: `Se generó ${imageUrls.length} imagen(es) correctamente.`,
       });
     } catch (error) {
-      console.error("Error generating image:", error);
+      console.error('Error generating image:', error);
       toast.dismiss(loadingToast);
       if (!apiKeyError) {
-        toast.error("Error al generar", {
-          description: error instanceof Error ? error.message : "Por favor, inténtalo de nuevo.",
+        toast.error('Error al generar', {
+          description:
+            error instanceof Error
+              ? error.message
+              : 'Por favor, inténtalo de nuevo.',
         });
       }
     } finally {
@@ -285,11 +292,11 @@ export default function ImageGenerator({
 
   const isFormValid = () => {
     // Check if prompt is not empty
-    if (editablePrompt.trim() === "") return false;
+    if (editablePrompt.trim() === '') return false;
 
     // Check if required image inputs are provided
     const requiredImageInputs = prompt.inputs.filter(
-      (input: PromptInput) => input.type === "image" && input.required
+      (input: PromptInput) => input.type === 'image' && input.required
     );
     if (requiredImageInputs.length > 0 && uploadedImages.length === 0) {
       return false;
@@ -299,9 +306,9 @@ export default function ImageGenerator({
   };
 
   const downloadImage = (imageUrl: string, index: number) => {
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     link.href = imageUrl;
-    link.download = `${prompt.title.replace(/\s+/g, "-").toLowerCase()}-${
+    link.download = `${prompt.title.replace(/\s+/g, '-').toLowerCase()}-${
       index + 1
     }.png`;
     document.body.appendChild(link);
@@ -313,14 +320,14 @@ export default function ImageGenerator({
     try {
       await navigator.clipboard.writeText(editablePrompt);
       setIsCopied(true);
-      toast.success("Prompt copiado", {
-        description: "El prompt ha sido copiado al portapapeles.",
+      toast.success('Prompt copiado', {
+        description: 'El prompt ha sido copiado al portapapeles.',
       });
       setTimeout(() => setIsCopied(false), 2000);
     } catch (err) {
-      console.error("Failed to copy text: ", err);
-      toast.error("Error al copiar", {
-        description: "No se pudo copiar el prompt al portapapeles.",
+      console.error('Failed to copy text: ', err);
+      toast.error('Error al copiar', {
+        description: 'No se pudo copiar el prompt al portapapeles.',
       });
     }
   };
@@ -382,25 +389,27 @@ export default function ImageGenerator({
             <CardTitle>Configura tu Generación</CardTitle>
             <CardDescription>
               {prompt.inputs.length === 0
-                ? "Edita el prompt a continuación para generar tu imagen de IA. Puedes modificar cualquier cosa entre [ ] para personalizarlo a tu estilo."
-                : "Configura las entradas a continuación y edita el prompt para generar tu imagen de IA. Completa los campos obligatorios y modifica cualquier cosa entre [ ] para personalizarlo a tu estilo."}
+                ? 'Edita el prompt a continuación para generar tu imagen de IA. Puedes modificar cualquier cosa entre [ ] para personalizarlo a tu estilo.'
+                : 'Configura las entradas a continuación y edita el prompt para generar tu imagen de IA. Completa los campos obligatorios y modifica cualquier cosa entre [ ] para personalizarlo a tu estilo.'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Image Upload Section - Only show if prompt has image inputs */}
-            {prompt.inputs.some((input: PromptInput) => input.type === "image") && (
+            {prompt.inputs.some(
+              (input: PromptInput) => input.type === 'image'
+            ) && (
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>Subir Imágenes</Label>
                   {/* Show descriptions for each image input */}
                   <div className="space-y-1">
                     {prompt.inputs
-                      .filter((input: PromptInput) => input.type === "image")
+                      .filter((input: PromptInput) => input.type === 'image')
                       .map((input) => (
                         <p key={input.key} className="text-sm text-gray-600">
                           <span className="font-medium">
-                            {input.required ? "Obligatorio" : "Opcional"}:
-                          </span>{" "}
+                            {input.required ? 'Obligatorio' : 'Opcional'}:
+                          </span>{' '}
                           {input.description}
                         </p>
                       ))}
@@ -462,7 +471,9 @@ export default function ImageGenerator({
             )}
 
             {/* Customization Instructions - Show if prompt has text inputs */}
-            {prompt.inputs.some((input: PromptInput) => input.type === "text") && (
+            {prompt.inputs.some(
+              (input: PromptInput) => input.type === 'text'
+            ) && (
               <div className="space-y-2">
                 <Label>Instrucciones de Personalización</Label>
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
@@ -472,13 +483,13 @@ export default function ImageGenerator({
                   </p>
                   <ul className="space-y-1">
                     {prompt.inputs
-                      .filter((input: PromptInput) => input.type === "text")
+                      .filter((input: PromptInput) => input.type === 'text')
                       .map((input) => (
                         <li key={input.key} className="text-sm text-blue-700">
-                          <span className="font-medium">•</span>{" "}
+                          <span className="font-medium">•</span>{' '}
                           <span className="font-medium">
                             {input.description}:
-                          </span>{" "}
+                          </span>{' '}
                           {input.placeholder && (
                             <span className="italic">
                               Busca [{input.placeholder}] en el prompt y
@@ -487,7 +498,7 @@ export default function ImageGenerator({
                           )}
                           {input.required && (
                             <span className="text-red-600 font-medium">
-                              {" "}
+                              {' '}
                               (Obligatorio)
                             </span>
                           )}
@@ -544,38 +555,46 @@ export default function ImageGenerator({
                       onClick={() => {
                         setSelectedModel(model.value);
                         const nextDefaultSize = model.supportedSizes[0];
-                        if (!model.supportedSizes.some((size) => size === imageSize)) {
+                        if (
+                          !model.supportedSizes.some(
+                            (size) => size === imageSize
+                          )
+                        ) {
                           setImageSize(nextDefaultSize);
                         }
                         // Clear images if exceeding new model limit
                         if (uploadedImages.length > model.maxImages) {
-                          setUploadedImages((prev) => prev.slice(0, model.maxImages));
-                          toast.info("Imágenes ajustadas", {
+                          setUploadedImages((prev) =>
+                            prev.slice(0, model.maxImages)
+                          );
+                          toast.info('Imágenes ajustadas', {
                             description: `Se removieron imágenes para cumplir el límite de ${model.maxImages} del modelo ${model.label}.`,
                           });
                         }
                       }}
                       className={`relative flex flex-col items-start p-4 rounded-lg border-2 transition-all text-left ${
                         isSelected
-                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                          ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                       }`}
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <IconComponent
                           className={`h-4 w-4 ${
-                            isSelected ? "text-primary" : "text-gray-500"
+                            isSelected ? 'text-primary' : 'text-gray-500'
                           }`}
                         />
                         <span
                           className={`font-medium ${
-                            isSelected ? "text-primary" : "text-gray-900"
+                            isSelected ? 'text-primary' : 'text-gray-900'
                           }`}
                         >
                           {model.label}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500">{model.description}</p>
+                      <p className="text-xs text-gray-500">
+                        {model.description}
+                      </p>
                       <span className="text-xs text-gray-400 mt-1">
                         Máx. {model.maxImages} imágenes
                       </span>
@@ -589,7 +608,8 @@ export default function ImageGenerator({
                 })}
               </div>
               <p className="text-xs text-gray-500">
-                Flash es más rápido para iteraciones. Pro ofrece mayor calidad y resolución hasta 4K.
+                Flash es más rápido para iteraciones. Pro ofrece mayor calidad y
+                resolución hasta 4K.
               </p>
             </div>
 
@@ -609,7 +629,9 @@ export default function ImageGenerator({
                 </SelectContent>
               </Select>
               <p className="text-xs text-gray-500">
-                Si envías imagen de referencia, Gemini puede mantener su tamaño original por defecto. Esta opción fuerza la resolución de salida cuando el modelo lo soporta.
+                Si envías imagen de referencia, Gemini puede mantener su tamaño
+                original por defecto. Esta opción fuerza la resolución de salida
+                cuando el modelo lo soporta.
               </p>
             </div>
 
@@ -726,7 +748,7 @@ export default function ImageGenerator({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => router.push("/settings")}
+                        onClick={() => router.push('/settings')}
                         className="bg-white hover:bg-yellow-50 border-yellow-300"
                       >
                         <Settings className="h-4 w-4 mr-2" />
@@ -748,7 +770,7 @@ export default function ImageGenerator({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => router.push("/settings")}
+                        onClick={() => router.push('/settings')}
                         className="bg-white hover:bg-red-50 border-red-300"
                       >
                         <Settings className="h-4 w-4 mr-2" />
@@ -771,7 +793,7 @@ export default function ImageGenerator({
                     Generando...
                   </>
                 ) : (
-                  "Generar Imagen"
+                  'Generar Imagen'
                 )}
               </Button>
             </Authenticated>
@@ -823,8 +845,8 @@ export default function ImageGenerator({
               <div className="text-center py-12 text-gray-500">
                 <div className="text-4xl mb-4">🎨</div>
                 <p>
-                  Edita tu prompt y haz clic en &apos;Generar Imagen&apos; para ver los
-                  resultados
+                  Edita tu prompt y haz clic en &apos;Generar Imagen&apos; para
+                  ver los resultados
                 </p>
               </div>
             )}

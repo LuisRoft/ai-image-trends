@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { useUser } from "@clerk/nextjs";
+import { useState } from 'react';
+import { useMutation, useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { useUser } from '@clerk/nextjs';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Eye,
   EyeOff,
@@ -24,9 +24,9 @@ import {
   Info,
   Loader2,
   ExternalLink,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,17 +37,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog';
 
 export default function ApiKeySettings() {
   const { user } = useUser();
-  const [apiKey, setApiKey] = useState("");
+  const [apiKey, setApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [message, setMessage] = useState<{
-    type: "success" | "error";
+    type: 'success' | 'error';
     text: string;
   } | null>(null);
 
@@ -59,8 +59,8 @@ export default function ApiKeySettings() {
     if (!user?.id) return;
     if (!apiKey.trim()) {
       setMessage({
-        type: "error",
-        text: "Por favor ingresa una API key válida",
+        type: 'error',
+        text: 'Por favor ingresa una API key válida',
       });
       return;
     }
@@ -70,11 +70,11 @@ export default function ApiKeySettings() {
 
     try {
       await saveApiKey({ apiKey: apiKey.trim() });
-      setMessage({ type: "success", text: "API key guardada exitosamente" });
-      setApiKey("");
+      setMessage({ type: 'success', text: 'API key guardada exitosamente' });
+      setApiKey('');
       setShowApiKey(false);
     } catch {
-      setMessage({ type: "error", text: "Error al guardar la API key" });
+      setMessage({ type: 'error', text: 'Error al guardar la API key' });
     } finally {
       setIsSaving(false);
     }
@@ -89,9 +89,9 @@ export default function ApiKeySettings() {
 
     try {
       await deleteApiKey();
-      setMessage({ type: "success", text: "API key eliminada exitosamente" });
+      setMessage({ type: 'success', text: 'API key eliminada exitosamente' });
     } catch {
-      setMessage({ type: "error", text: "Error al eliminar la API key" });
+      setMessage({ type: 'error', text: 'Error al eliminar la API key' });
     } finally {
       setIsDeleting(false);
     }
@@ -117,7 +117,7 @@ export default function ApiKeySettings() {
           <AlertDescription>
             <ol className="list-decimal list-inside space-y-1 mt-2">
               <li>
-                Ve a{" "}
+                Ve a{' '}
                 <a
                   href="https://aistudio.google.com/apikey"
                   target="_blank"
@@ -138,7 +138,7 @@ export default function ApiKeySettings() {
               <span>💡</span>
               <span>
                 Recuerda: Tu API key es personal y tiene costos asociados según
-                tu uso.{" "}
+                tu uso.{' '}
                 <a
                   href="https://ai.google.dev/pricing"
                   target="_blank"
@@ -177,10 +177,10 @@ export default function ApiKeySettings() {
                   </code>
                 </div>
                 <p className="text-xs text-green-700">
-                  Última actualización:{" "}
-                  {new Date(existingApiKey.updatedAt).toLocaleString("es-ES", {
-                    dateStyle: "medium",
-                    timeStyle: "short",
+                  Última actualización:{' '}
+                  {new Date(existingApiKey.updatedAt).toLocaleString('es-ES', {
+                    dateStyle: 'medium',
+                    timeStyle: 'short',
                   })}
                 </p>
                 <AlertDialog
@@ -238,18 +238,18 @@ export default function ApiKeySettings() {
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="apiKey" className="text-sm font-medium">
-              {existingApiKey?.hasKey ? "Nueva API Key" : "API Key de Gemini"}
+              {existingApiKey?.hasKey ? 'Nueva API Key' : 'API Key de Gemini'}
             </Label>
             <div className="relative">
               <Input
                 id="apiKey"
-                type={showApiKey ? "text" : "password"}
+                type={showApiKey ? 'text' : 'password'}
                 placeholder="AIzaSy..."
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
                 className="pr-10 font-mono text-sm"
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && apiKey.trim() && !isSaving) {
+                  if (e.key === 'Enter' && apiKey.trim() && !isSaving) {
                     handleSave();
                   }
                 }}
@@ -258,7 +258,7 @@ export default function ApiKeySettings() {
                 type="button"
                 onClick={() => setShowApiKey(!showApiKey)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
-                aria-label={showApiKey ? "Ocultar API key" : "Mostrar API key"}
+                aria-label={showApiKey ? 'Ocultar API key' : 'Mostrar API key'}
               >
                 {showApiKey ? (
                   <EyeOff className="h-4 w-4" />
@@ -295,9 +295,9 @@ export default function ApiKeySettings() {
         {/* Success/Error Message */}
         {message && (
           <Alert
-            variant={message.type === "success" ? "success" : "destructive"}
+            variant={message.type === 'success' ? 'success' : 'destructive'}
           >
-            {message.type === "success" ? (
+            {message.type === 'success' ? (
               <CheckCircle2 className="h-4 w-4" />
             ) : (
               <AlertCircle className="h-4 w-4" />
