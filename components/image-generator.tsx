@@ -39,9 +39,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { Doc } from "@/convex/_generated/dataModel";
+
+interface PromptInput {
+  key: string;
+  type: string;
+  description: string;
+  required: boolean;
+  placeholder?: string;
+}
 
 interface ImageGeneratorProps {
-  prompt: any; // Type from Convex
+  prompt: Doc<"prompts">;
   onBack: () => void;
 }
 
@@ -244,13 +253,16 @@ export default function ImageGenerator({
       }
 
       // Extract image data from the response
-      const imageResults = data.result.filter(
-        (part: any) =>
+      interface ImagePart {
+        inlineData?: { mimeType: string; data: string };
+      }
+      const imageResults = (data.result as ImagePart[]).filter(
+        (part) =>
           part.inlineData && part.inlineData.mimeType.startsWith("image/")
       );
       const imageUrls = imageResults.map(
-        (part: any) =>
-          `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`
+        (part) =>
+          `data:${part.inlineData!.mimeType};base64,${part.inlineData!.data}`
       );
 
       setGeneratedImages(imageUrls);
@@ -277,7 +289,7 @@ export default function ImageGenerator({
 
     // Check if required image inputs are provided
     const requiredImageInputs = prompt.inputs.filter(
-      (input: any) => input.type === "image" && input.required
+      (input: PromptInput) => input.type === "image" && input.required
     );
     if (requiredImageInputs.length > 0 && uploadedImages.length === 0) {
       return false;
@@ -376,15 +388,15 @@ export default function ImageGenerator({
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Image Upload Section - Only show if prompt has image inputs */}
-            {prompt.inputs.some((input: any) => input.type === "image") && (
+            {prompt.inputs.some((input: PromptInput) => input.type === "image") && (
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>Subir Imágenes</Label>
                   {/* Show descriptions for each image input */}
                   <div className="space-y-1">
                     {prompt.inputs
-                      .filter((input: any) => input.type === "image")
-                      .map((input: any, index: number) => (
+                      .filter((input: PromptInput) => input.type === "image")
+                      .map((input) => (
                         <p key={input.key} className="text-sm text-gray-600">
                           <span className="font-medium">
                             {input.required ? "Obligatorio" : "Opcional"}:
@@ -450,7 +462,7 @@ export default function ImageGenerator({
             )}
 
             {/* Customization Instructions - Show if prompt has text inputs */}
-            {prompt.inputs.some((input: any) => input.type === "text") && (
+            {prompt.inputs.some((input: PromptInput) => input.type === "text") && (
               <div className="space-y-2">
                 <Label>Instrucciones de Personalización</Label>
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
@@ -460,8 +472,8 @@ export default function ImageGenerator({
                   </p>
                   <ul className="space-y-1">
                     {prompt.inputs
-                      .filter((input: any) => input.type === "text")
-                      .map((input: any) => (
+                      .filter((input: PromptInput) => input.type === "text")
+                      .map((input) => (
                         <li key={input.key} className="text-sm text-blue-700">
                           <span className="font-medium">•</span>{" "}
                           <span className="font-medium">
@@ -811,7 +823,7 @@ export default function ImageGenerator({
               <div className="text-center py-12 text-gray-500">
                 <div className="text-4xl mb-4">🎨</div>
                 <p>
-                  Edita tu prompt y haz clic en 'Generar Imagen' para ver los
+                  Edita tu prompt y haz clic en &apos;Generar Imagen&apos; para ver los
                   resultados
                 </p>
               </div>

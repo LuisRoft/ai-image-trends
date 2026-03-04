@@ -1,5 +1,4 @@
 import GridPrompts from "@/components/grid-prompts";
-import HeaderDev from "@/components/header-dev";
 
 export default function Home() {
   return (

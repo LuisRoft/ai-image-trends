@@ -73,7 +73,7 @@ export default function ApiKeySettings() {
       setMessage({ type: "success", text: "API key guardada exitosamente" });
       setApiKey("");
       setShowApiKey(false);
-    } catch (error) {
+    } catch {
       setMessage({ type: "error", text: "Error al guardar la API key" });
     } finally {
       setIsSaving(false);
@@ -90,7 +90,7 @@ export default function ApiKeySettings() {
     try {
       await deleteApiKey();
       setMessage({ type: "success", text: "API key eliminada exitosamente" });
-    } catch (error) {
+    } catch {
       setMessage({ type: "error", text: "Error al eliminar la API key" });
     } finally {
       setIsDeleting(false);

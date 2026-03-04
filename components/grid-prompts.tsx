@@ -32,15 +32,17 @@ import {
 } from "@/components/ui/pagination";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import type { Doc } from "@/convex/_generated/dataModel";
 import { PromptGridSkeleton } from "@/components/skeletons/prompt-grid-skeleton";
 
-// Utility functions
-const getAllCategories = (prompts: any[]) => {
+type PromptDoc = Doc<"prompts">;
+
+const getAllCategories = (prompts: PromptDoc[]) => {
   return [...new Set(prompts.map((prompt) => prompt.category))].sort();
 };
 
 const searchPrompts = (
-  prompts: any[],
+  prompts: PromptDoc[],
   searchQuery: string,
   selectedCategory: string
 ) => {
@@ -96,7 +98,10 @@ export default function GridPrompts() {
 
   const prompts = useQuery(api.prompts.getPrompts);
 
-  const safePrompts = prompts || [];
+  const safePrompts = useMemo(
+    () => prompts ?? ([] as PromptDoc[]),
+    [prompts]
+  );
 
   const categories = ["All", ...getAllCategories(safePrompts)];
 
@@ -125,7 +130,7 @@ export default function GridPrompts() {
     setCurrentPage(1);
   };
 
-  const handlePromptSelect = (prompt: any) => {
+  const handlePromptSelect = (prompt: PromptDoc) => {
     router.push(`/generator?id=${prompt.id}`);
   };
 
