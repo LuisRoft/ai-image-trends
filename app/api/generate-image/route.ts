@@ -116,7 +116,7 @@ export async function POST(request: Request) {
             aspectRatio: aspectRatio,
             imageSize: normalizedImageSize,
           },
-        } as any, // Type assertion needed as imageConfig is not in TypeScript definitions yet
+        } as Record<string, unknown>, // imageConfig not in SDK types yet
       });
 
     const result: Part[] = response.candidates?.[0]?.content?.parts || [];

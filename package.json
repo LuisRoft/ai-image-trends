@@ -6,7 +6,9 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "quality:react-doctor": "react-doctor . --verbose --diff main -y",
+    "quality:score": "react-doctor . --score -y"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.32.0",
@@ -35,6 +37,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.9",
+    "react-doctor": "^0.0.29",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.3.8",
     "typescript": "^5"
