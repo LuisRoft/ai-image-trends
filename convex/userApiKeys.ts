@@ -1,5 +1,5 @@
-import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { v } from 'convex/values';
+import { mutation, query } from './_generated/server';
 
 // Simple XOR encryption for API key storage
 // Works in Convex without "use node" - compatible with V8 runtime
@@ -7,11 +7,11 @@ function encryptApiKey(apiKey: string): string {
   const secretKey = process.env.ENCRYPTION_SECRET;
 
   if (!secretKey) {
-    throw new Error("ENCRYPTION_SECRET environment variable is required");
+    throw new Error('ENCRYPTION_SECRET environment variable is required');
   }
 
   // XOR encryption - simple but effective for our use case
-  let encrypted = "";
+  let encrypted = '';
   for (let i = 0; i < apiKey.length; i++) {
     const keyChar = secretKey.charCodeAt(i % secretKey.length);
     const apiKeyChar = apiKey.charCodeAt(i);
@@ -26,12 +26,12 @@ function decryptApiKey(encryptedData: string): string {
   const secretKey = process.env.ENCRYPTION_SECRET;
 
   if (!secretKey) {
-    throw new Error("ENCRYPTION_SECRET environment variable is required");
+    throw new Error('ENCRYPTION_SECRET environment variable is required');
   }
 
   // Decode from base64 using atob (available in V8)
   const encrypted = atob(encryptedData);
-  let decrypted = "";
+  let decrypted = '';
 
   for (let i = 0; i < encrypted.length; i++) {
     const keyChar = secretKey.charCodeAt(i % secretKey.length);
@@ -52,7 +52,7 @@ export const saveApiKey = mutation({
     const identity = await ctx.auth.getUserIdentity();
 
     if (!identity) {
-      throw new Error("Unauthorized: You must be logged in to save an API key");
+      throw new Error('Unauthorized: You must be logged in to save an API key');
     }
 
     const userId = identity.subject; // This is the Clerk user ID
@@ -62,8 +62,8 @@ export const saveApiKey = mutation({
 
     // Check if user already has an API key
     const existingKey = await ctx.db
-      .query("userApiKeys")
-      .withIndex("by_user_id", (q) => q.eq("userId", userId))
+      .query('userApiKeys')
+      .withIndex('by_user_id', (q) => q.eq('userId', userId))
       .first();
 
     if (existingKey) {
@@ -72,16 +72,16 @@ export const saveApiKey = mutation({
         geminiApiKey: encryptedKey,
         updatedAt: Date.now(),
       });
-      return { success: true, message: "API key updated successfully" };
+      return { success: true, message: 'API key updated successfully' };
     } else {
       // Insert new key
-      await ctx.db.insert("userApiKeys", {
+      await ctx.db.insert('userApiKeys', {
         userId: userId,
         geminiApiKey: encryptedKey,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
-      return { success: true, message: "API key saved successfully" };
+      return { success: true, message: 'API key saved successfully' };
     }
   },
 });
@@ -94,14 +94,14 @@ export const getApiKey = query({
     const identity = await ctx.auth.getUserIdentity();
 
     if (!identity) {
-      throw new Error("Unauthorized: You must be logged in");
+      throw new Error('Unauthorized: You must be logged in');
     }
 
     const userId = identity.subject;
 
     const apiKeyDoc = await ctx.db
-      .query("userApiKeys")
-      .withIndex("by_user_id", (q) => q.eq("userId", userId))
+      .query('userApiKeys')
+      .withIndex('by_user_id', (q) => q.eq('userId', userId))
       .first();
 
     if (!apiKeyDoc) {
@@ -110,7 +110,7 @@ export const getApiKey = query({
 
     // Return a masked version for display purposes
     const decrypted = decryptApiKey(apiKeyDoc.geminiApiKey);
-    const masked = `${decrypted.substring(0, 8)}${"*".repeat(
+    const masked = `${decrypted.substring(0, 8)}${'*'.repeat(
       20
     )}${decrypted.substring(decrypted.length - 4)}`;
 
@@ -132,8 +132,8 @@ export const getActualApiKey = query({
     // This query is called from the API route with the authenticated userId
     // No need to re-verify here since auth is already done in the API route
     const apiKeyDoc = await ctx.db
-      .query("userApiKeys")
-      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
+      .query('userApiKeys')
+      .withIndex('by_user_id', (q) => q.eq('userId', args.userId))
       .first();
 
     if (!apiKeyDoc) {
@@ -154,21 +154,21 @@ export const deleteApiKey = mutation({
     const identity = await ctx.auth.getUserIdentity();
 
     if (!identity) {
-      throw new Error("Unauthorized: You must be logged in");
+      throw new Error('Unauthorized: You must be logged in');
     }
 
     const userId = identity.subject;
 
     const apiKeyDoc = await ctx.db
-      .query("userApiKeys")
-      .withIndex("by_user_id", (q) => q.eq("userId", userId))
+      .query('userApiKeys')
+      .withIndex('by_user_id', (q) => q.eq('userId', userId))
       .first();
 
     if (apiKeyDoc) {
       await ctx.db.delete(apiKeyDoc._id);
-      return { success: true, message: "API key deleted successfully" };
+      return { success: true, message: 'API key deleted successfully' };
     }
 
-    return { success: false, message: "No API key found" };
+    return { success: false, message: 'No API key found' };
   },
 });

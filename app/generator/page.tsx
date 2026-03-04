@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useSearchParams, useRouter } from "next/navigation";
-import { Suspense } from "react";
-import ImageGenerator from "@/components/image-generator";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { ImageGeneratorSkeleton } from "@/components/skeletons/image-generator-skeleton";
+import { useSearchParams, useRouter } from 'next/navigation';
+import { Suspense } from 'react';
+import ImageGenerator from '@/components/image-generator';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { ImageGeneratorSkeleton } from '@/components/skeletons/image-generator-skeleton';
 
 function GeneratorContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const promptId = searchParams.get("id");
+  const promptId = searchParams.get('id');
 
   // Get prompts from Convex
   const prompts = useQuery(api.prompts.getPrompts);
@@ -34,7 +34,7 @@ function GeneratorContent() {
             El prompt que buscas no existe o ha sido eliminado.
           </p>
           <button
-            onClick={() => router.push("/")}
+            onClick={() => router.push('/')}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
           >
             Volver al catálogo
@@ -45,7 +45,7 @@ function GeneratorContent() {
   }
 
   const handleBack = () => {
-    router.push("/");
+    router.push('/');
   };
 
   return <ImageGenerator prompt={prompt} onBack={handleBack} />;

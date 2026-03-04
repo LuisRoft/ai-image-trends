@@ -5,7 +5,7 @@ export interface ImagePrompt {
   category: string;
   prompt: string;
   inputs: {
-    type: "image" | "text" | "none";
+    type: 'image' | 'text' | 'none';
     description: string;
     required: boolean;
     placeholder?: string;
@@ -14,7 +14,7 @@ export interface ImagePrompt {
     key: string;
   }[];
   outputType: string;
-  difficulty: "easy" | "medium" | "hard";
+  difficulty: 'easy' | 'medium' | 'hard';
   tags: string[];
   author?: string;
   sourceUrl?: string;

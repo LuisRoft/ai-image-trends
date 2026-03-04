@@ -1,5 +1,5 @@
-import { defineSchema, defineTable } from "convex/server";
-import { v } from "convex/values";
+import { defineSchema, defineTable } from 'convex/server';
+import { v } from 'convex/values';
 
 export default defineSchema({
   prompts: defineTable({
@@ -23,12 +23,12 @@ export default defineSchema({
     author: v.string(),
     sourceUrl: v.string(),
     imageUrl: v.string(),
-  }).index("by_prompt_id", ["id"]),
+  }).index('by_prompt_id', ['id']),
 
   userApiKeys: defineTable({
     userId: v.string(),
     geminiApiKey: v.string(), // Encriptada
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index("by_user_id", ["userId"]),
+  }).index('by_user_id', ['userId']),
 });

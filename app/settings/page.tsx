@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
-import ApiKeySettings from "@/components/api-key-settings";
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
+import ApiKeySettings from '@/components/api-key-settings';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -13,7 +13,7 @@ export default function SettingsPage() {
       <div>
         <Button
           variant="ghost"
-          onClick={() => router.push("/")}
+          onClick={() => router.push('/')}
           className="mb-6"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />

@@ -1,26 +1,26 @@
-"use client";
+'use client';
 
-import { useState, useMemo } from "react";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { Search, Filter } from "lucide-react";
+import { useState, useMemo } from 'react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { Search, Filter } from 'lucide-react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Pagination,
   PaginationContent,
@@ -29,13 +29,13 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from "@/components/ui/pagination";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import type { Doc } from "@/convex/_generated/dataModel";
-import { PromptGridSkeleton } from "@/components/skeletons/prompt-grid-skeleton";
+} from '@/components/ui/pagination';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import type { Doc } from '@/convex/_generated/dataModel';
+import { PromptGridSkeleton } from '@/components/skeletons/prompt-grid-skeleton';
 
-type PromptDoc = Doc<"prompts">;
+type PromptDoc = Doc<'prompts'>;
 
 const getAllCategories = (prompts: PromptDoc[]) => {
   return [...new Set(prompts.map((prompt) => prompt.category))].sort();
@@ -48,7 +48,7 @@ const searchPrompts = (
 ) => {
   return prompts.filter((prompt) => {
     const matchesSearch =
-      searchQuery === "" ||
+      searchQuery === '' ||
       prompt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       prompt.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       prompt.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -57,7 +57,7 @@ const searchPrompts = (
       );
 
     const matchesCategory =
-      selectedCategory === "All" || prompt.category === selectedCategory;
+      selectedCategory === 'All' || prompt.category === selectedCategory;
 
     return matchesSearch && matchesCategory;
   });
@@ -65,45 +65,42 @@ const searchPrompts = (
 
 const getDifficultyColor = (difficulty: string) => {
   switch (difficulty) {
-    case "easy":
-      return "bg-green-100 text-green-800 hover:bg-green-200";
-    case "medium":
-      return "bg-yellow-100 text-yellow-800 hover:bg-yellow-200";
-    case "hard":
-      return "bg-red-100 text-red-800 hover:bg-red-200";
+    case 'easy':
+      return 'bg-green-100 text-green-800 hover:bg-green-200';
+    case 'medium':
+      return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200';
+    case 'hard':
+      return 'bg-red-100 text-red-800 hover:bg-red-200';
     default:
-      return "bg-gray-100 text-gray-800 hover:bg-gray-200";
+      return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
   }
 };
 
 const getDifficultyIcon = (difficulty: string) => {
   switch (difficulty) {
-    case "easy":
-      return "●";
-    case "medium":
-      return "●●";
-    case "hard":
-      return "●●●";
+    case 'easy':
+      return '●';
+    case 'medium':
+      return '●●';
+    case 'hard':
+      return '●●●';
     default:
-      return "●";
+      return '●';
   }
 };
 
 export default function GridPrompts() {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
   const prompts = useQuery(api.prompts.getPrompts);
 
-  const safePrompts = useMemo(
-    () => prompts ?? ([] as PromptDoc[]),
-    [prompts]
-  );
+  const safePrompts = useMemo(() => prompts ?? ([] as PromptDoc[]), [prompts]);
 
-  const categories = ["All", ...getAllCategories(safePrompts)];
+  const categories = ['All', ...getAllCategories(safePrompts)];
 
   const filteredPrompts = useMemo(() => {
     return searchPrompts(safePrompts, searchQuery, selectedCategory);
@@ -173,7 +170,7 @@ export default function GridPrompts() {
       <div className="mb-6">
         <p className="text-sm text-gray-600">
           Mostrando {currentPrompts.length} de {filteredPrompts.length} prompts
-          {selectedCategory !== "All" && ` en ${selectedCategory}`}
+          {selectedCategory !== 'All' && ` en ${selectedCategory}`}
           {totalPages > 1 && ` (Página ${currentPage} de ${totalPages})`}
         </p>
       </div>
@@ -193,7 +190,7 @@ export default function GridPrompts() {
                 width={500}
                 height={300}
                 className="w-full h-46 object-cover group-hover:scale-105 transition-transform duration-300"
-              />{" "}
+              />{' '}
               <div className="absolute top-3 right-3">
                 <Badge className={getDifficultyColor(prompt.difficulty)}>
                   {getDifficultyIcon(prompt.difficulty)} {prompt.difficulty}
@@ -234,7 +231,7 @@ export default function GridPrompts() {
                 <div className="flex items-center justify-between text-xs text-gray-500">
                   <span className="flex items-center gap-1">
                     📝 {prompt.inputs.length} entrada
-                    {prompt.inputs.length !== 1 ? "s" : ""}
+                    {prompt.inputs.length !== 1 ? 's' : ''}
                   </span>
                   {prompt.author && (
                     <span className="truncate">por {prompt.author}</span>
@@ -260,8 +257,8 @@ export default function GridPrompts() {
                   }}
                   className={
                     currentPage === 1
-                      ? "pointer-events-none opacity-50"
-                      : "cursor-pointer"
+                      ? 'pointer-events-none opacity-50'
+                      : 'cursor-pointer'
                   }
                 />
               </PaginationItem>
@@ -316,8 +313,8 @@ export default function GridPrompts() {
                   }}
                   className={
                     currentPage === totalPages
-                      ? "pointer-events-none opacity-50"
-                      : "cursor-pointer"
+                      ? 'pointer-events-none opacity-50'
+                      : 'cursor-pointer'
                   }
                 />
               </PaginationItem>
@@ -339,8 +336,8 @@ export default function GridPrompts() {
           <Button
             variant="outline"
             onClick={() => {
-              setSearchQuery("");
-              setSelectedCategory("All");
+              setSearchQuery('');
+              setSelectedCategory('All');
               setCurrentPage(1);
             }}
           >

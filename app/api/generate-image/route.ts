@@ -40,7 +40,10 @@ const fileToGenerativePart = async (file: File) => {
 export async function POST(request: Request) {
   try {
     // Start independent work in parallel to reduce route latency.
-    const [authData, formData] = await Promise.all([auth(), request.formData()]);
+    const [authData, formData] = await Promise.all([
+      auth(),
+      request.formData(),
+    ]);
     const { userId } = authData;
 
     if (!userId) {

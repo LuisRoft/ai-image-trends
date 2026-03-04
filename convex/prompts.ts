@@ -1,5 +1,5 @@
-import { mutation, query } from "./_generated/server";
-import { v } from "convex/values";
+import { mutation, query } from './_generated/server';
+import { v } from 'convex/values';
 
 export const addPrompts = mutation({
   args: {
@@ -30,13 +30,13 @@ export const addPrompts = mutation({
   },
   handler: async (ctx, args) => {
     for (const prompt of args.prompts) {
-      await ctx.db.insert("prompts", prompt);
+      await ctx.db.insert('prompts', prompt);
     }
   },
 });
 
 export const getPrompts = query({
   handler: async (ctx) => {
-    return await ctx.db.query("prompts").collect();
+    return await ctx.db.query('prompts').collect();
   },
 });
