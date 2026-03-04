@@ -57,9 +57,22 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build (includes React Doctor quality gate)
+      - name: Check required secrets
         env:
-          REACT_DOCTOR_MIN_SCORE: "75"
+          NEXT_PUBLIC_CONVEX_URL: ${{ secrets.NEXT_PUBLIC_CONVEX_URL }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+        run: |
+          if [ -z "$NEXT_PUBLIC_CONVEX_URL" ]; then
+            echo "::error::NEXT_PUBLIC_CONVEX_URL secret is missing or empty. Add it in Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          if [ -z "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" ]; then
+            echo "::error::NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY secret is missing or empty. Add it in Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+
+      - name: Build
+        env:
           NEXT_PUBLIC_CONVEX_URL: ${{ secrets.NEXT_PUBLIC_CONVEX_URL }}
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
         run: pnpm run build

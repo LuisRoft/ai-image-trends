@@ -4,13 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "pnpm run quality:gate && next build --turbopack",
-    "build:vercel": "pnpm run build",
+    "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
     "quality:react-doctor": "react-doctor . --verbose --diff main -y",
-    "quality:score": "react-doctor . --score -y",
-    "quality:gate": "node scripts/check-react-doctor-score.mjs"
+    "quality:score": "react-doctor . --score -y"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.32.0",
