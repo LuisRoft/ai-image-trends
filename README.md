@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://aimage-luisroftl.vercel.app">Ver en vivo</a> · 
+  <a href="https://vizai.luisroftl.me">Ver en vivo</a> · 
   <a href="https://github.com/LuisRoft/ai-image-trends">Código</a>
 </p>
 

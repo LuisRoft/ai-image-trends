@@ -418,7 +418,7 @@ export default function ImageGenerator({
                       <div key={index} className="relative">
                         <Image
                           src={previewUrls[index]!}
-                          alt={`Subido ${index + 1}`}
+                          alt={`Imagen subida ${index + 1} para el prompt ${prompt.title}`}
                           width={150}
                           height={100}
                           className="rounded-lg object-cover w-full h-24"
@@ -794,7 +794,7 @@ export default function ImageGenerator({
                     <div className="relative">
                       <Image
                         src={imageUrl}
-                        alt={`Generated image ${index + 1}`}
+                        alt={`Imagen generada con IA - ${prompt.title} (${index + 1})`}
                         width={400}
                         height={300}
                         className="w-full rounded-lg object-cover"

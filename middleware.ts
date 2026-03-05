@@ -5,6 +5,7 @@ const isPublicRoute = createRouteMatcher([
   '/sign-up(.*)',
   '/',
   '/generator(.*)',
+  '/api/og(.*)', // OG image para crawlers y previews (debe ser público)
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
