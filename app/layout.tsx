@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'AImage - Biblioteca de Prompts y Generador de Imágenes AI',
+  title: 'VizAI - Biblioteca de Prompts y Generador de Imágenes AI',
   description:
     'Explora y edita los prompts mas populares del momento para transformar tus fotos en estilos únicos (anime, cartoon, realista y más). Genera imágenes al instante o guarda tus favoritos. Powered by AI.',
   keywords: [
@@ -32,24 +32,24 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: 'LuisRoftl', url: 'https://luisroftl.me' }],
   openGraph: {
-    title: 'AImage - Biblioteca y Generador de Imágenes AI',
+    title: 'VizAI - Biblioteca y Generador de Imágenes AI',
     description:
       'Convierte tus fotos en estilos sorprendentes con prompts listos para usar. Biblioteca gratis + generación de imágenes directa con IA.',
     url: 'https://aimage-luisroftl.vercel.app/',
-    siteName: 'AImage',
+    siteName: 'VizAI',
     images: [
       {
         url: 'https://aimage-luisroftl.vercel.app/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'AImage - Biblioteca y Generador de Imágenes AI',
+        alt: 'VizAI - Biblioteca y Generador de Imágenes AI',
       },
     ],
     locale: 'es_ES',
     type: 'website',
   },
   icons: {
-    icon: '/favicon.ico',
+    icon: '/favicon.svg',
   },
 };
 
@@ -70,9 +70,10 @@ export default function RootLayout({
         </div>
         <div className="relative mx-auto h-screen w-full max-w-7xl px-6 md:px-8 lg:px-12">
           <ClerkProvider
+            afterSignOutUrl="/"
             appearance={{
               baseTheme: shadcn,
-              layout: { logoImageUrl: './favicon.svg' },
+              layout: { logoImageUrl: '/logo-vizai.svg' },
             }}
           >
             <ConvexClientProvider>

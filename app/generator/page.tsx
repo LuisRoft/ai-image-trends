@@ -12,16 +12,14 @@ function GeneratorContent() {
   const router = useRouter();
   const promptId = searchParams.get('id');
 
-  // Get prompts from Convex
-  const prompts = useQuery(api.prompts.getPrompts);
+  const prompt = useQuery(
+    api.prompts.getPromptById,
+    promptId ? { id: promptId } : 'skip'
+  );
 
-  // Show skeleton while loading
-  if (prompts === undefined) {
+  if (promptId && prompt === undefined) {
     return <ImageGeneratorSkeleton />;
   }
-
-  // Find the prompt by ID
-  const prompt = prompts.find((p) => p.id === promptId);
 
   if (!prompt) {
     return (

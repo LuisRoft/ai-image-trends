@@ -83,32 +83,6 @@ const modelOptions = [
   },
 ];
 
-const getDifficultyColor = (difficulty: string) => {
-  switch (difficulty) {
-    case 'easy':
-      return 'bg-green-100 text-green-800';
-    case 'medium':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'hard':
-      return 'bg-red-100 text-red-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
-};
-
-const getDifficultyIcon = (difficulty: string) => {
-  switch (difficulty) {
-    case 'easy':
-      return '●';
-    case 'medium':
-      return '●●';
-    case 'hard':
-      return '●●●';
-    default:
-      return '●';
-  }
-};
-
 export default function ImageGenerator({
   prompt,
   onBack,
@@ -360,9 +334,6 @@ export default function ImageGenerator({
 
             <div className="flex items-center gap-2 mb-4">
               <Badge variant="outline">{prompt.category}</Badge>
-              <Badge className={getDifficultyColor(prompt.difficulty)}>
-                {getDifficultyIcon(prompt.difficulty)} {prompt.difficulty}
-              </Badge>
             </div>
 
             <div className="flex flex-wrap gap-1 mb-4">
