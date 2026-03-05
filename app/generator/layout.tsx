@@ -1,17 +1,21 @@
 import type { Metadata } from 'next';
 
+const BASE_URL =
+  process.env.SITE_URL ??
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '');
+
 export const metadata: Metadata = {
   title: 'Generador de Imágenes AI',
   description:
     'Genera imágenes únicas con inteligencia artificial usando prompts optimizados. Personaliza estilos anime, cartoon, realista y más. Sube tu foto y transforma con IA.',
   alternates: {
-    canonical: 'https://vizai.luisroftl.me/generator',
+    ...(BASE_URL && { canonical: `${BASE_URL}/generator` }),
   },
   openGraph: {
     title: 'Generador de Imágenes AI | VizAI',
     description:
       'Genera imágenes únicas con inteligencia artificial usando prompts optimizados. Personaliza estilos anime, cartoon, realista y más.',
-    url: 'https://vizai.luisroftl.me/generator',
+    ...(BASE_URL && { url: `${BASE_URL}/generator` }),
     type: 'website',
     images: [
       {

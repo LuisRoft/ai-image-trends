@@ -1,69 +1,71 @@
-'use client';
-
-import { useSearchParams, useRouter } from 'next/navigation';
-import { Suspense } from 'react';
-import ImageGenerator from '@/components/image-generator';
-import { useQuery } from 'convex/react';
+import type { Metadata } from 'next';
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
-import { ImageGeneratorSkeleton } from '@/components/skeletons/image-generator-skeleton';
+import GeneratorClient from './GeneratorClient';
 
-function GeneratorContent() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const promptId = searchParams.get('id');
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
-  const prompt = useQuery(
-    api.prompts.getPromptById,
-    promptId ? { id: promptId } : 'skip'
-  );
+const BASE_DESCRIPTION =
+  'Genera imágenes únicas con inteligencia artificial usando prompts optimizados. Personaliza estilos anime, cartoon, realista y más. Sube tu foto y transforma con IA.';
 
-  if (promptId && prompt === undefined) {
-    return <ImageGeneratorSkeleton />;
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ id?: string }>;
+}): Promise<Metadata> {
+  const { id } = await searchParams;
+
+  if (!id) {
+    return {
+      title: 'Generador de Imágenes AI',
+      description: BASE_DESCRIPTION,
+    };
   }
+
+  const prompt = await convex.query(api.prompts.getPromptById, { id });
 
   if (!prompt) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            Prompt no encontrado
-          </h1>
-          <p className="text-gray-600 mb-6">
-            El prompt que buscas no existe o ha sido eliminado.
-          </p>
-          <button
-            onClick={() => router.push('/')}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-          >
-            Volver al catálogo
-          </button>
-        </div>
-      </div>
-    );
+    return {
+      title: 'Prompt no encontrado',
+      description: BASE_DESCRIPTION,
+    };
   }
 
-  const handleBack = () => {
-    router.push('/');
-  };
+  const baseUrl =
+    process.env.SITE_URL ??
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '');
 
-  return <ImageGenerator prompt={prompt} onBack={handleBack} />;
+  const ogUrl =
+    `/api/og` +
+    `?title=${encodeURIComponent(prompt.title)}` +
+    `&description=${encodeURIComponent(prompt.description)}` +
+    `&imageUrl=${encodeURIComponent(prompt.imageUrl)}`;
+
+  return {
+    title: prompt.title,
+    description: prompt.description,
+    openGraph: {
+      title: `${prompt.title} | VizAI`,
+      description: prompt.description,
+      ...(baseUrl && { url: `${baseUrl}/generator?id=${id}` }),
+      images: [
+        {
+          url: ogUrl,
+          width: 1200,
+          height: 630,
+          alt: prompt.title,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${prompt.title} | VizAI`,
+      description: prompt.description,
+      images: [ogUrl],
+    },
+  };
 }
 
 export default function GeneratorPage() {
-  return (
-    <div className="min-h-screen">
-      <Suspense
-        fallback={
-          <div className="min-h-screen flex items-center justify-center">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Cargando generador...</p>
-            </div>
-          </div>
-        }
-      >
-        <GeneratorContent />
-      </Suspense>
-    </div>
-  );
+  return <GeneratorClient />;
 }

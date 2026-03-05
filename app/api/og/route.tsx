@@ -4,22 +4,24 @@ import path from 'path';
 
 export const runtime = 'nodejs';
 
-const BASE_URL = 'https://vizai.luisroftl.me';
+const BASE_URL =
+  process.env.SITE_URL ??
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '');
 
 const LogoMark = () => (
   <svg
-    width="48"
-    height="48"
-    viewBox="0 0 196 196"
+    width="36"
+    height="41"
+    viewBox="0 0 256 291"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
     <path
-      d="M102.522 138.37C100.13 140.762 96.2524 140.762 93.8604 138.37L77.8139 122.324C63.4005 107.911 39.0469 118.099 39.0469 138.477V158.942C39.0469 162.325 41.7891 165.067 45.1719 165.067H151.211C154.594 165.067 157.336 162.325 157.336 158.942V98.344C157.336 92.8872 150.738 90.1544 146.88 94.013L102.522 138.37Z"
+      d="M139.314 231.241C133.065 237.489 122.935 237.489 116.686 231.241L83.8992 198.454C52.7059 167.261 0 189.311 0 233.412V274.958C0 283.795 7.16344 290.958 16 290.958H240C248.837 290.958 256 283.795 256 274.958V153.182C256 138.928 238.766 131.789 228.686 141.868L139.314 231.241Z"
       fill="#191919"
     />
     <path
-      d="M93.8604 57.3216C96.2523 54.9296 100.13 54.9297 102.522 57.3216L118.569 73.3681C132.982 87.7815 157.336 77.5927 157.336 57.2152V36.75C157.336 33.3673 154.594 30.625 151.211 30.625H45.1719C41.7891 30.625 39.0469 33.3673 39.0469 36.75V97.348C39.0469 102.805 45.6444 105.538 49.5029 101.679L93.8604 57.3216Z"
+      d="M116.686 59.7171C122.935 53.4687 133.065 53.4687 139.314 59.7171L172.101 92.5042C203.294 123.697 256 101.647 256 57.5462V16C256 7.16343 248.837 0 240 0H16C7.16344 0 0 7.16344 0 16V137.776C0 152.03 17.2343 159.169 27.3137 149.09L116.686 59.7171Z"
       fill="#191919"
     />
   </svg>
@@ -32,6 +34,7 @@ export async function GET(request: Request) {
   const description =
     searchParams.get('description') ??
     'Biblioteca de Prompts y Generador de Imágenes AI';
+  const imageUrl = searchParams.get('imageUrl');
 
   const [geistRegular, geistBold] = await Promise.all([
     readFile(
@@ -48,6 +51,117 @@ export async function GET(request: Request) {
     ),
   ]);
 
+  const fonts = [
+    {
+      name: 'Geist',
+      data: geistRegular,
+      style: 'normal' as const,
+      weight: 400 as const,
+    },
+    {
+      name: 'Geist',
+      data: geistBold,
+      style: 'normal' as const,
+      weight: 700 as const,
+    },
+  ];
+
+  const titleSize = title.length > 24 ? 'text-[50px]' : 'text-[62px]';
+
+  if (imageUrl) {
+    return new ImageResponse(
+      <div
+        tw="flex w-full h-full bg-white relative overflow-hidden"
+        style={{ fontFamily: 'Geist' }}
+      >
+        <div
+          tw="absolute inset-0 flex"
+          style={{
+            backgroundImage:
+              'linear-gradient(to right, #f0f0f0 1px, transparent 1px), linear-gradient(to bottom, #f0f0f0 1px, transparent 1px)',
+            backgroundSize: '96px 64px',
+          }}
+        />
+        <div
+          tw="absolute flex"
+          style={{
+            top: -60,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: 800,
+            height: 500,
+            background:
+              'radial-gradient(ellipse at center top, #C9EBFF 0%, rgba(201,235,255,0.4) 40%, transparent 70%)',
+          }}
+        />
+
+        <div
+          tw="relative flex w-full h-full px-16 py-[52px]"
+          style={{ gap: 44 }}
+        >
+          <div tw="flex flex-col flex-1 min-w-0">
+            <div tw="flex items-center" style={{ gap: 10 }}>
+              <LogoMark />
+              <span
+                tw="font-bold text-[#191919]"
+                style={{
+                  fontSize: 26,
+                  letterSpacing: '-0.025em',
+                  lineHeight: 1.25,
+                }}
+              >
+                VizAI
+              </span>
+            </div>
+
+            <div tw="flex flex-col mt-auto" style={{ gap: 12 }}>
+              <h1
+                tw={`${titleSize} font-bold text-[#191919] m-0`}
+                style={{ lineHeight: 1.25, letterSpacing: '-0.025em' }}
+              >
+                {title}
+              </h1>
+              <p
+                tw="text-[#555555] m-0 font-normal"
+                style={{ fontSize: 21, lineHeight: 1.375 }}
+              >
+                {description.length > 130
+                  ? description.slice(0, 130) + '…'
+                  : description}
+              </p>
+            </div>
+
+            <div tw="flex items-center justify-between mt-9 pt-5 border-t border-[#e5e5e5]">
+              <span tw="text-[19px] text-[#888888]">
+                {BASE_URL.replace('https://', '')}
+              </span>
+              <div tw="flex items-center bg-[#f5f5f5] px-[18px] py-[6px] rounded-full border border-[#e5e5e5]">
+                <span tw="text-[17px] text-[#555555] font-medium">
+                  Powered by AI
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div tw="flex items-center justify-center flex-shrink-0 w-[370px]">
+            <img
+              src={imageUrl}
+              width={370}
+              height={450}
+              style={{
+                borderRadius: '20px',
+                objectFit: 'cover',
+                boxShadow:
+                  '0 20px 60px rgba(0,0,0,0.14), 0 4px 16px rgba(0,0,0,0.08)',
+              }}
+            />
+          </div>
+        </div>
+      </div>,
+      { width: 1200, height: 630, fonts }
+    );
+  }
+
   return new ImageResponse(
     <div
       tw="flex flex-col w-full h-full bg-white relative overflow-hidden"
@@ -61,7 +175,6 @@ export async function GET(request: Request) {
           backgroundSize: '96px 64px',
         }}
       />
-
       <div
         tw="absolute flex"
         style={{
@@ -76,54 +189,49 @@ export async function GET(request: Request) {
       />
 
       <div tw="relative flex flex-col flex-1 px-[72px] pt-14 pb-14">
-        <div tw="flex items-center gap-3">
+        <div tw="flex items-center" style={{ gap: 10 }}>
           <LogoMark />
-          <span tw="text-[30px] font-bold text-gray-900 tracking-tight">
+          <span
+            tw="font-bold text-[#191919]"
+            style={{
+              fontSize: 26,
+              letterSpacing: '-0.025em',
+              lineHeight: 1.25,
+            }}
+          >
             VizAI
           </span>
         </div>
 
-        <div tw="flex flex-col mt-auto gap-5">
+        <div tw="flex flex-col mt-auto" style={{ gap: 20 }}>
           <h1
-            tw="text-[72px] font-bold text-gray-900 leading-tight m-0 tracking-tight max-w-[960px]"
+            tw="font-bold text-[#191919] m-0 max-w-[960px]"
             style={{
               fontSize: title.length > 30 ? 58 : 72,
+              lineHeight: 1.25,
+              letterSpacing: '-0.025em',
             }}
           >
             {title}
           </h1>
-          <p tw="text-[26px] text-gray-500 m-0 leading-snug max-w-[880px] font-normal">
+          <p
+            tw="text-[#555555] m-0 max-w-[880px] font-normal"
+            style={{ fontSize: 26, lineHeight: 1.375 }}
+          >
             {description}
           </p>
         </div>
 
-        <div tw="flex items-center justify-between mt-10 pt-6 border-t border-gray-200">
-          <span tw="text-xl text-gray-400">
+        <div tw="flex items-center justify-between mt-10 pt-6 border-t border-[#e5e5e5]">
+          <span tw="text-xl text-[#888888]">
             {BASE_URL.replace('https://', '')}
           </span>
-          <div tw="flex items-center gap-2 bg-gray-100 px-5 py-2 rounded-full border border-gray-200">
-            <span tw="text-lg text-gray-500 font-medium">Powered by AI</span>
+          <div tw="flex items-center bg-[#f5f5f5] px-5 py-2 rounded-full border border-[#e5e5e5]">
+            <span tw="text-lg text-[#555555] font-medium">Powered by AI</span>
           </div>
         </div>
       </div>
     </div>,
-    {
-      width: 1200,
-      height: 630,
-      fonts: [
-        {
-          name: 'Geist',
-          data: geistRegular,
-          style: 'normal',
-          weight: 400,
-        },
-        {
-          name: 'Geist',
-          data: geistBold,
-          style: 'normal',
-          weight: 700,
-        },
-      ],
-    }
+    { width: 1200, height: 630, fonts }
   );
 }

@@ -18,10 +18,12 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
-const BASE_URL = 'https://vizai.luisroftl.me';
+const BASE_URL =
+  process.env.SITE_URL ??
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '');
 
 export const metadata: Metadata = {
-  metadataBase: new URL(BASE_URL),
+  ...(BASE_URL && { metadataBase: new URL(BASE_URL) }),
   title: {
     default: 'VizAI - Biblioteca de Prompts y Generador de Imágenes AI',
     template: '%s | VizAI',
@@ -40,13 +42,13 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: 'LuisRoftl', url: 'https://luisroftl.me' }],
   alternates: {
-    canonical: BASE_URL,
+    ...(BASE_URL && { canonical: BASE_URL }),
   },
   openGraph: {
     title: 'VizAI - Biblioteca y Generador de Imágenes AI',
     description:
       'Convierte tus fotos en estilos sorprendentes con prompts listos para usar. Biblioteca gratis + generación de imágenes directa con IA.',
-    url: BASE_URL,
+    ...(BASE_URL && { url: BASE_URL }),
     siteName: 'VizAI',
     images: [
       {
@@ -109,7 +111,7 @@ export default function RootLayout({
                 '@context': 'https://schema.org',
                 '@type': 'WebSite',
                 name: 'VizAI',
-                url: 'https://vizai.luisroftl.me',
+                url: BASE_URL,
                 description:
                   'Biblioteca de prompts y generador de imágenes con inteligencia artificial.',
                 inLanguage: 'es',
@@ -122,8 +124,7 @@ export default function RootLayout({
                   '@type': 'SearchAction',
                   target: {
                     '@type': 'EntryPoint',
-                    urlTemplate:
-                      'https://vizai.luisroftl.me/?q={search_term_string}',
+                    urlTemplate: `${BASE_URL}/?q={search_term_string}`,
                   },
                   'query-input': 'required name=search_term_string',
                 },
@@ -132,7 +133,7 @@ export default function RootLayout({
                 '@context': 'https://schema.org',
                 '@type': 'WebApplication',
                 name: 'VizAI',
-                url: 'https://vizai.luisroftl.me',
+                url: BASE_URL,
                 applicationCategory: 'DesignApplication',
                 operatingSystem: 'Web',
                 description:
