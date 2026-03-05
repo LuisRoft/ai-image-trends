@@ -1,4 +1,4 @@
-# AImage - Biblioteca de Prompts y Generador de Imágenes AI
+# VizAI - Biblioteca de Prompts y Generador de Imágenes AI
 
 Explora y edita los prompts más populares del momento para transformar tus fotos en estilos únicos (anime, cartoon, realista y más). Genera imágenes al instante o guarda tus favoritos. Powered by Google Gemini AI.
 
