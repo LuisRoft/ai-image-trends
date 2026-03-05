@@ -144,8 +144,10 @@ export async function GET(request: Request) {
           </div>
 
           <div tw="flex items-center justify-center flex-shrink-0 w-[370px]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={imageUrl}
+              alt=""
               width={370}
               height={450}
               style={{
