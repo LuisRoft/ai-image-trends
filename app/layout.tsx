@@ -73,7 +73,6 @@ export default function RootLayout({
             afterSignOutUrl="/"
             appearance={{
               baseTheme: shadcn,
-              layout: { logoImageUrl: '/logo-vizai.svg' },
             }}
           >
             <ConvexClientProvider>
