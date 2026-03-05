@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/logo.svg" alt="VizAI" width="80" />
+  <img src="public/favicon.svg" alt="VizAI" width="80" />
 </p>
 
 # VizAI
