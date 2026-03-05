@@ -1,6 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, startTransition } from 'react';
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  startTransition,
+} from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -162,12 +168,11 @@ export default function GridPrompts() {
               <div
                 key={prompt.id}
                 className="animate-fade-up"
-                style={{ animationDelay: `${Math.min(i % ITEMS_PER_PAGE, 7) * 40}ms` }}
+                style={{
+                  animationDelay: `${Math.min(i % ITEMS_PER_PAGE, 7) * 40}ms`,
+                }}
               >
-                <PromptCard
-                  prompt={prompt}
-                  onClick={handlePromptSelect}
-                />
+                <PromptCard prompt={prompt} onClick={handlePromptSelect} />
               </div>
             ))}
             {isLoadingMore &&

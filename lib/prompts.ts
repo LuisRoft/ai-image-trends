@@ -5,9 +5,7 @@ export interface PromptSearchItem {
   tags: string[];
 }
 
-export function getAllCategories(
-  prompts: PromptSearchItem[]
-): string[] {
+export function getAllCategories(prompts: PromptSearchItem[]): string[] {
   return [...new Set(prompts.map((prompt) => prompt.category))].sort();
 }
 

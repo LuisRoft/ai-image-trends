@@ -52,9 +52,7 @@ export const getPrompts = query({
       args.category && args.category !== 'All'
         ? ctx.db
             .query('prompts')
-            .withIndex('by_category', (q) =>
-              q.eq('category', args.category!)
-            )
+            .withIndex('by_category', (q) => q.eq('category', args.category!))
         : ctx.db.query('prompts');
 
     return await baseQuery.order('asc').paginate(args.paginationOpts);
@@ -85,7 +83,6 @@ export const getCategories = query({
   },
 });
 
-
 export const getPromptsSearch = query({
   args: {
     searchQuery: v.string(),
@@ -112,10 +109,7 @@ export const getPromptsSearch = query({
 
       const all = await baseQuery.take(200);
       const totalCount = all.length;
-      const page = all.slice(
-        args.offset,
-        args.offset + args.numItems
-      );
+      const page = all.slice(args.offset, args.offset + args.numItems);
       const hasMore = args.offset + args.numItems < totalCount;
 
       return { page, totalCount, hasMore };

@@ -67,7 +67,10 @@ export default function HeaderDev() {
           </a>
         </div>
 
-        <div className="hidden sm:block h-6 w-px bg-zinc-200 shrink-0" aria-hidden />
+        <div
+          className="hidden sm:block h-6 w-px bg-zinc-200 shrink-0"
+          aria-hidden
+        />
 
         <div className="flex justify-end min-w-0">
           {!isLoaded ? (

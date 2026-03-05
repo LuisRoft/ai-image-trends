@@ -10,7 +10,10 @@ interface PromptCardProps {
   onClick: (prompt: PromptDoc) => void;
 }
 
-const PromptCard = memo(function PromptCard({ prompt, onClick }: PromptCardProps) {
+const PromptCard = memo(function PromptCard({
+  prompt,
+  onClick,
+}: PromptCardProps) {
   return (
     <div
       className="group relative cursor-pointer overflow-hidden rounded-2xl aspect-[3/4] bg-zinc-100 shadow-sm hover:shadow-xl transition-shadow duration-300"
