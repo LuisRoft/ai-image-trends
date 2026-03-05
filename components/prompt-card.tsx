@@ -1,134 +1,58 @@
-'use client';
-
-import { useState, useRef, useEffect } from 'react';
+import { memo } from 'react';
 import Image from 'next/image';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import type { ImagePrompt } from '@/lib/types';
+import { ArrowRight } from 'lucide-react';
+import type { Doc } from '@/convex/_generated/dataModel';
+
+type PromptDoc = Doc<'prompts'>;
 
 interface PromptCardProps {
-  prompt: ImagePrompt;
-  onSelect: (prompt: ImagePrompt) => void;
-  getDifficultyColor: (difficulty: string) => string;
-  getDifficultyIcon: (difficulty: string) => string;
+  prompt: PromptDoc;
+  onClick: (prompt: PromptDoc) => void;
 }
 
-export default function PromptCard({
-  prompt,
-  onSelect,
-  getDifficultyColor,
-  getDifficultyIcon,
-}: PromptCardProps) {
-  const [isVisible, setIsVisible] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      {
-        threshold: 0.1,
-        rootMargin: '50px',
-      }
-    );
-
-    if (cardRef.current) {
-      observer.observe(cardRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-
+const PromptCard = memo(function PromptCard({ prompt, onClick }: PromptCardProps) {
   return (
-    <Card
-      ref={cardRef}
-      className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
-      onClick={() => onSelect(prompt)}
+    <div
+      className="group relative cursor-pointer overflow-hidden rounded-2xl aspect-[3/4] bg-zinc-100 shadow-sm hover:shadow-xl transition-shadow duration-300"
+      onClick={() => onClick(prompt)}
     >
-      <div className="relative overflow-hidden rounded-t-lg bg-gray-100">
-        {isVisible ? (
-          <>
-            {!imageLoaded && (
-              <div className="w-full h-48 bg-gray-200 animate-pulse flex items-center justify-center">
-                <div className="text-gray-400 text-sm">Cargando...</div>
-              </div>
-            )}
-            <Image
-              src={prompt.imageUrl}
-              alt={prompt.title}
-              width={500}
-              height={300}
-              className={`w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300 ${
-                imageLoaded ? 'opacity-100' : 'opacity-0'
-              }`}
-              onLoad={() => setImageLoaded(true)}
-              loading="lazy"
-              placeholder="blur"
-              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkbHB0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
-            />
-          </>
-        ) : (
-          <div className="w-full h-48 bg-gray-200 animate-pulse" />
-        )}
-        <div className="absolute top-3 right-3">
-          <Badge className={getDifficultyColor(prompt.difficulty)}>
-            {getDifficultyIcon(prompt.difficulty)} {prompt.difficulty}
-          </Badge>
-        </div>
+      <Image
+        src={prompt.imageUrl}
+        alt={prompt.title}
+        fill
+        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+        className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+      />
+
+      <div className="absolute top-3 left-3 z-10">
+        <span className="inline-flex items-center rounded-full bg-white/90 backdrop-blur-sm px-2.5 py-1 text-xs font-medium text-zinc-800 shadow-sm">
+          {prompt.category}
+        </span>
       </div>
 
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-lg line-clamp-2 group-hover:text-blue-600 transition-colors">
-            {prompt.title}
-          </CardTitle>
-        </div>
-        <Badge variant="outline" className="w-fit text-xs">
-          {prompt.category}
-        </Badge>
-      </CardHeader>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-      <CardContent className="pt-0">
-        <CardDescription className="line-clamp-3 text-sm mb-4">
-          {prompt.description}
-        </CardDescription>
-
-        <div className="space-y-3">
-          <div className="flex flex-wrap gap-1">
-            {prompt.tags.slice(0, 3).map((tag) => (
-              <Badge key={tag} variant="secondary" className="text-xs">
-                {tag}
-              </Badge>
-            ))}
-            {prompt.tags.length > 3 && (
-              <Badge variant="secondary" className="text-xs">
-                +{prompt.tags.length - 3}
-              </Badge>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between text-xs text-gray-500">
-            <span className="flex items-center gap-1">
-              📝 {prompt.inputs.length} entrada
-              {prompt.inputs.length !== 1 ? 's' : ''}
+      <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-3 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 ease-out">
+        <h3 className="text-white font-semibold text-base leading-snug line-clamp-2 mb-2 drop-shadow">
+          {prompt.title}
+        </h3>
+        <div className="flex flex-wrap gap-1 mb-3">
+          {prompt.tags.slice(0, 3).map((tag: string) => (
+            <span
+              key={tag}
+              className="inline-flex items-center rounded-full bg-white/20 backdrop-blur-sm px-2 py-0.5 text-xs text-white/90"
+            >
+              {tag}
             </span>
-            {prompt.author && (
-              <span className="truncate">por {prompt.author}</span>
-            )}
-          </div>
+          ))}
         </div>
-      </CardContent>
-    </Card>
+        <div className="flex items-center justify-between rounded-xl bg-white px-3 py-2 text-zinc-900 text-sm font-semibold">
+          <span>Probar prompt</span>
+          <ArrowRight className="size-4" />
+        </div>
+      </div>
+    </div>
   );
-}
+});
+
+export default PromptCard;
