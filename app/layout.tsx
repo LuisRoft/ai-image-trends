@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import HeaderDev from '@/components/header-dev';
-import ConvexClientProvider from './ConvexClientProvider';
+import ConvexClientProvider from './convex-client-provider';
 import { ClerkProvider } from '@clerk/nextjs';
 import { shadcn } from '@clerk/themes';
 import { Toaster } from '@/components/ui/sonner';

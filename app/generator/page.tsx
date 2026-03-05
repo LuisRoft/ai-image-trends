@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
-import GeneratorClient from './GeneratorClient';
+import GeneratorClient from './generator-client';
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
