@@ -1,12 +1,19 @@
 import { ImageResponse } from 'next/og';
-import { readFile } from 'fs/promises';
-import path from 'path';
 
 export const runtime = 'nodejs';
 
 const BASE_URL =
   process.env.SITE_URL ??
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '');
+
+async function loadFontFromUrl(url: string): Promise<ArrayBuffer> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Font load failed: ${url} ${res.status}`);
+  return res.arrayBuffer();
+}
+
+const GEIST_FONT_BASE =
+  'https://cdn.jsdelivr.net/npm/geist@1.7.0/dist/fonts/geist-sans';
 
 const LogoMark = () => (
   <svg
@@ -37,18 +44,8 @@ export async function GET(request: Request) {
   const imageUrl = searchParams.get('imageUrl');
 
   const [geistRegular, geistBold] = await Promise.all([
-    readFile(
-      path.join(
-        process.cwd(),
-        'node_modules/geist/dist/fonts/geist-sans/Geist-Regular.ttf'
-      )
-    ),
-    readFile(
-      path.join(
-        process.cwd(),
-        'node_modules/geist/dist/fonts/geist-sans/Geist-Bold.ttf'
-      )
-    ),
+    loadFontFromUrl(`${GEIST_FONT_BASE}/Geist-Regular.ttf`),
+    loadFontFromUrl(`${GEIST_FONT_BASE}/Geist-Bold.ttf`),
   ]);
 
   const fonts = [
