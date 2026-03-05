@@ -23,7 +23,14 @@ export default defineSchema({
     author: v.string(),
     sourceUrl: v.string(),
     imageUrl: v.string(),
-  }).index('by_prompt_id', ['id']),
+    searchableText: v.optional(v.string()),
+  })
+    .index('by_prompt_id', ['id'])
+    .index('by_category', ['category'])
+    .searchIndex('search_prompts', {
+      searchField: 'searchableText',
+      filterFields: ['category'],
+    }),
 
   userApiKeys: defineTable({
     userId: v.string(),
