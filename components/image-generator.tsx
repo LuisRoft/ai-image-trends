@@ -40,7 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { Doc } from '@/convex/_generated/dataModel';
+import type { PromptWithAuthVisibility } from '@/lib/types/prompt';
 
 interface PromptInput {
   key: string;
@@ -51,9 +51,7 @@ interface PromptInput {
 }
 
 interface ImageGeneratorProps {
-  prompt: Doc<'prompts'> & {
-    prompt: string | null;
-  };
+  prompt: PromptWithAuthVisibility;
   onBack: () => void;
 }
 
