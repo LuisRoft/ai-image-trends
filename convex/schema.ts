@@ -38,4 +38,16 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index('by_user_id', ['userId']),
+
+  dailyGenerationUsage: defineTable({
+    userId: v.string(),
+    dayUtc: v.string(),
+    usedCount: v.number(),
+    pendingCount: v.number(),
+    pendingStartedAt: v.optional(v.number()),
+    lastUsedAt: v.optional(v.number()),
+    lastModel: v.optional(v.string()),
+    lastPromptId: v.optional(v.string()),
+    lastSource: v.optional(v.string()),
+  }).index('by_user_day', ['userId', 'dayUtc']),
 });

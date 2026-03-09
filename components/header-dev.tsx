@@ -8,14 +8,21 @@ import {
   UserButton,
   useAuth,
 } from '@clerk/nextjs';
+import { useQuery } from 'convex/react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useMediaQuery } from '@/hooks/use-media-query';
+import { api } from '@/convex/_generated/api';
+import { ShimmerButton } from '@/components/ui/shimmer-button';
 
 export default function HeaderDev() {
-  const { isLoaded } = useAuth();
+  const { isLoaded, isSignedIn } = useAuth();
   const isMobile = useMediaQuery('(max-width: 640px)');
+  const creditsStatus = useQuery(
+    api.generationCredits.getDailyCreditsStatus,
+    isLoaded && isSignedIn ? {} : 'skip'
+  );
 
   return (
     <header className="flex justify-between items-center gap-2 py-4 sm:py-6 md:py-8 text-gray-800 min-w-0">
@@ -93,7 +100,7 @@ export default function HeaderDev() {
                 </SignInButton>
               </SignedOut>
               <SignedIn>
-                <div className="flex items-center gap-1 sm:gap-2">
+                <div className="flex items-center gap-1 sm:gap-2 ">
                   <div className="flex items-center justify-center rounded-full bg-white/80 shadow-sm py-1 px-1 min-w-0">
                     <UserButton
                       showName={!isMobile}
@@ -106,6 +113,17 @@ export default function HeaderDev() {
                       }}
                     />
                   </div>
+                  <ShimmerButton className="shadow-2xl">
+                    <span className="text-sm">
+                      {creditsStatus === undefined
+                        ? isMobile
+                          ? '... créditos'
+                          : '... créditos restantes'
+                        : isMobile
+                          ? `${creditsStatus.remainingCount} créditos`
+                          : `${creditsStatus.remainingCount} créditos restantes`}
+                    </span>
+                  </ShimmerButton>
                   <Button
                     variant="outline"
                     size="icon"

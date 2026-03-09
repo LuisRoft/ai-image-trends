@@ -1,5 +1,5 @@
 import { v } from 'convex/values';
-import { mutation, query } from './_generated/server';
+import { internalQuery, mutation, query } from './_generated/server';
 
 // Simple XOR encryption for API key storage
 // Works in Convex without "use node" - compatible with V8 runtime
@@ -124,13 +124,11 @@ export const getApiKey = query({
 });
 
 // Get user's actual API key (for backend use)
-export const getActualApiKey = query({
+export const getActualApiKey = internalQuery({
   args: {
     userId: v.string(),
   },
   handler: async (ctx, args) => {
-    // This query is called from the API route with the authenticated userId
-    // No need to re-verify here since auth is already done in the API route
     const apiKeyDoc = await ctx.db
       .query('userApiKeys')
       .withIndex('by_user_id', (q) => q.eq('userId', args.userId))

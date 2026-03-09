@@ -55,6 +55,8 @@ interface ImageGeneratorProps {
   onBack: () => void;
 }
 
+type GenerationSource = 'credits' | 'user_api_key';
+
 const SUPPORTED_IMAGE_FORMATS = [
   'image/jpeg',
   'image/jpg',
@@ -64,6 +66,7 @@ const SUPPORTED_IMAGE_FORMATS = [
 ];
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const DAILY_CREDITS_LIMIT = 10;
 
 const modelOptions = [
   {
@@ -101,19 +104,33 @@ export default function ImageGenerator({
     'gemini-2.5-flash-image'
   );
   const [imageSize, setImageSize] = useState<string>('1K');
+  const [generationSource, setGenerationSource] =
+    useState<GenerationSource>('credits');
+  const [initializedSourceForUserId, setInitializedSourceForUserId] = useState<
+    string | null
+  >(null);
 
   // Check if user has configured their API key - only query if user is logged in
   const userApiKey = useQuery(
     api.userApiKeys.getApiKey,
     isLoaded && user ? {} : 'skip'
   );
+  const creditsStatus = useQuery(
+    api.generationCredits.getDailyCreditsStatus,
+    isLoaded && user ? {} : 'skip'
+  );
 
-  const hasApiKey =
-    user &&
-    userApiKey !== undefined &&
-    userApiKey !== null &&
-    userApiKey.hasKey;
+  const hasApiKey = Boolean(user && userApiKey && userApiKey.hasKey);
   const isPromptUnlocked = prompt.prompt !== null;
+  const creditsRemaining = creditsStatus?.remainingCount ?? DAILY_CREDITS_LIMIT;
+  const hasCreditsAvailable =
+    creditsStatus === undefined ? true : creditsRemaining > 0;
+  const hasPendingCreditGeneration =
+    creditsStatus?.hasPendingGeneration ?? false;
+  const isCreditsStatusLoading = Boolean(user && creditsStatus === undefined);
+  const isApiKeyStatusLoading = Boolean(user && userApiKey === undefined);
+  const shouldConfigureUserApiKey =
+    generationSource === 'user_api_key' && !hasApiKey;
 
   const currentModel = useMemo(
     () =>
@@ -135,6 +152,25 @@ export default function ImageGenerator({
       previewUrls.forEach((url) => URL.revokeObjectURL(url));
     };
   }, [previewUrls]);
+
+  useEffect(() => {
+    if (!isLoaded) {
+      return;
+    }
+
+    if (!user) {
+      setGenerationSource('credits');
+      setInitializedSourceForUserId(null);
+      return;
+    }
+
+    if (initializedSourceForUserId === user.id || userApiKey === undefined) {
+      return;
+    }
+
+    setGenerationSource(userApiKey?.hasKey ? 'user_api_key' : 'credits');
+    setInitializedSourceForUserId(user.id);
+  }, [initializedSourceForUserId, isLoaded, user, userApiKey]);
 
   const handleImageUpload = (files: FileList) => {
     const validFiles: File[] = [];
@@ -180,7 +216,10 @@ export default function ImageGenerator({
     setApiKeyError(null);
 
     const loadingToast = toast.loading('Generando imagen...', {
-      description: `Usando modelo ${currentModel.label}`,
+      description:
+        generationSource === 'credits'
+          ? `Usando ${currentModel.label} con créditos`
+          : `Usando ${currentModel.label} con tu API key`,
     });
 
     try {
@@ -189,6 +228,8 @@ export default function ImageGenerator({
       formDataToSend.append('aspectRatio', aspectRatio);
       formDataToSend.append('imageSize', imageSize);
       formDataToSend.append('model', selectedModel);
+      formDataToSend.append('generationSource', generationSource);
+      formDataToSend.append('promptId', prompt.id);
 
       // Add uploaded images
       uploadedImages.forEach((file) => {
@@ -204,6 +245,26 @@ export default function ImageGenerator({
 
       if (!response.ok) {
         // Handle specific error cases
+        if (data.generationInProgress) {
+          toast.dismiss(loadingToast);
+          toast.info('Generación en progreso', {
+            description:
+              'Ya hay una generación con créditos en curso. Espera a que termine.',
+          });
+          return;
+        }
+        if (data.noCredits) {
+          toast.dismiss(loadingToast);
+          toast.error('Sin créditos disponibles', {
+            description:
+              'Espera el reinicio diario a las 00:00 UTC o usa tu API key.',
+            action: {
+              label: 'Configurar API key',
+              onClick: () => router.push('/settings'),
+            },
+          });
+          return;
+        }
         if (data.needsApiKey) {
           toast.dismiss(loadingToast);
           toast.error('API Key no configurada', {
@@ -252,7 +313,10 @@ export default function ImageGenerator({
       setGeneratedImages(imageUrls);
       toast.dismiss(loadingToast);
       toast.success('¡Imagen generada!', {
-        description: `Se generó ${imageUrls.length} imagen(es) correctamente.`,
+        description:
+          generationSource === 'credits' && data.creditsStatus
+            ? `Se generó ${imageUrls.length} imagen(es). Te quedan ${data.creditsStatus.remainingCount} créditos hoy.`
+            : `Se generó ${imageUrls.length} imagen(es) correctamente.`,
       });
     } catch (error) {
       console.error('Error generating image:', error);
@@ -312,6 +376,41 @@ export default function ImageGenerator({
     }
   };
 
+  const handleGenerationSourceChange = (value: string) => {
+    setApiKeyError(null);
+    setGenerationSource(value as GenerationSource);
+  };
+
+  const handlePrimaryAction = () => {
+    if (shouldConfigureUserApiKey) {
+      router.push('/settings');
+      return;
+    }
+
+    handleGenerate();
+  };
+
+  const isPrimaryActionDisabled = shouldConfigureUserApiKey
+    ? isApiKeyStatusLoading
+    : !isPromptUnlocked ||
+      !isFormValid() ||
+      isGenerating ||
+      (generationSource === 'credits'
+        ? isCreditsStatusLoading ||
+          !hasCreditsAvailable ||
+          hasPendingCreditGeneration
+        : isApiKeyStatusLoading || !hasApiKey);
+
+  const primaryActionLabel = isGenerating
+    ? 'Generando...'
+    : shouldConfigureUserApiKey
+      ? 'Agregar mi API key'
+      : generationSource === 'credits' && hasPendingCreditGeneration
+        ? 'Generación en progreso'
+        : generationSource === 'credits' && !hasCreditsAvailable
+          ? 'Sin créditos disponibles'
+          : 'Generar Imagen';
+
   return (
     <div className="w-full max-w-7xl mx-auto  py-8">
       {/* Header */}
@@ -366,8 +465,8 @@ export default function ImageGenerator({
             <CardTitle>Configura tu Generación</CardTitle>
             <CardDescription>
               {prompt.inputs.length === 0
-                ? 'Edita el prompt a continuación para generar tu imagen de IA. Puedes modificar cualquier cosa entre [ ] para personalizarlo a tu estilo.'
-                : 'Configura las entradas a continuación y edita el prompt para generar tu imagen de IA. Completa los campos obligatorios y modifica cualquier cosa entre [ ] para personalizarlo a tu estilo.'}
+                ? 'Elige si quieres generar con créditos o con tu API key y luego edita el prompt para crear tu imagen.'
+                : 'Configura las entradas, elige la fuente de generación y personaliza el prompt para crear tu imagen.'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -421,7 +520,10 @@ export default function ImageGenerator({
                 {uploadedImages.length > 0 && (
                   <div className="grid grid-cols-2 gap-4">
                     {uploadedImages.map((file, index) => (
-                      <div key={index} className="relative">
+                      <div
+                        key={`${file.name}-${file.size}-${file.lastModified}`}
+                        className="relative"
+                      >
                         <Image
                           src={previewUrls[index]!}
                           alt={`Imagen subida ${index + 1} para el prompt ${prompt.title}`}
@@ -547,6 +649,114 @@ export default function ImageGenerator({
                 )}
               </div>
             </div>
+
+            <Authenticated>
+              <div className="space-y-3">
+                <Label htmlFor="generation-source">Fuente de Generación</Label>
+                <Select
+                  value={generationSource}
+                  onValueChange={handleGenerationSourceChange}
+                >
+                  <SelectTrigger id="generation-source">
+                    <SelectValue placeholder="Selecciona la fuente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem
+                      value="credits"
+                      disabled={!hasCreditsAvailable && generationSource !== 'credits'}
+                    >
+                      Créditos
+                    </SelectItem>
+                    <SelectItem value="user_api_key" disabled={!hasApiKey}>
+                      Mi API key
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {generationSource === 'credits' ? (
+                  hasPendingCreditGeneration || !hasCreditsAvailable ? (
+                    <div
+                      className={`rounded-lg border p-4 ${
+                        hasPendingCreditGeneration
+                          ? 'border-blue-200 bg-blue-50'
+                          : 'border-amber-200 bg-amber-50'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <AlertCircle
+                          className={`mt-0.5 h-5 w-5 flex-shrink-0 ${
+                            hasPendingCreditGeneration
+                              ? 'text-blue-600'
+                              : 'text-amber-600'
+                          }`}
+                        />
+                        <div className="space-y-2">
+                          <p
+                            className={`text-sm font-medium ${
+                              hasPendingCreditGeneration
+                                ? 'text-blue-900'
+                                : 'text-amber-900'
+                            }`}
+                          >
+                            {hasPendingCreditGeneration
+                              ? 'Ya hay una generación con créditos en progreso.'
+                              : 'No tienes créditos disponibles.'}
+                          </p>
+                          <p
+                            className={`text-sm ${
+                              hasPendingCreditGeneration
+                                ? 'text-blue-800'
+                                : 'text-amber-800'
+                            }`}
+                          >
+                            {hasPendingCreditGeneration
+                              ? 'Espera a que termine antes de lanzar otra generación.'
+                              : 'Espera al reinicio diario a las 00:00 UTC o configura tu API key para seguir generando.'}
+                          </p>
+                          {!hasCreditsAvailable && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => router.push('/settings')}
+                              className="bg-white hover:bg-amber-100"
+                            >
+                              <Settings className="mr-2 h-4 w-4" />
+                              Configurar API key
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : null
+                ) : hasApiKey ? null : (
+                  <div
+                    className="rounded-lg border border-yellow-200 bg-yellow-50 p-4"
+                  >
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-yellow-600" />
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-yellow-900">
+                          No tienes una API key configurada.
+                        </p>
+                        <p className="text-sm text-yellow-800">
+                          Agrégala en configuración para generar sin consumir
+                          créditos.
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => router.push('/settings')}
+                          className="bg-white hover:bg-yellow-100"
+                        >
+                          <Settings className="mr-2 h-4 w-4" />
+                          Ir a Configuración
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Authenticated>
 
             {/* Model Selector */}
             <div className="space-y-3">
@@ -739,33 +949,6 @@ export default function ImageGenerator({
             </div>
 
             <Authenticated>
-              {/* API Key Warning */}
-              {!hasApiKey && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <h4 className="font-medium text-yellow-900 mb-1">
-                        API Key no configurada
-                      </h4>
-                      <p className="text-sm text-yellow-800 mb-3">
-                        Para generar imágenes necesitas configurar tu API key
-                        personal de Google Gemini.
-                      </p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => router.push('/settings')}
-                        className="bg-white hover:bg-yellow-50 border-yellow-300"
-                      >
-                        <Settings className="h-4 w-4 mr-2" />
-                        Ir a Configuración
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* API Key Error */}
               {apiKeyError && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -789,8 +972,8 @@ export default function ImageGenerator({
               )}
 
               <Button
-                onClick={handleGenerate}
-                disabled={!isFormValid() || isGenerating || !hasApiKey}
+                onClick={handlePrimaryAction}
+                disabled={isPrimaryActionDisabled}
                 className="w-full"
                 size="lg"
               >
@@ -799,8 +982,13 @@ export default function ImageGenerator({
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Generando...
                   </>
+                ) : shouldConfigureUserApiKey ? (
+                  <>
+                    <Settings className="h-4 w-4 mr-2" />
+                    {primaryActionLabel}
+                  </>
                 ) : (
-                  'Generar Imagen'
+                  primaryActionLabel
                 )}
               </Button>
             </Authenticated>
@@ -826,7 +1014,7 @@ export default function ImageGenerator({
             {generatedImages.length > 0 ? (
               <div className="space-y-4">
                 {generatedImages.map((imageUrl, index) => (
-                  <div key={index} className="space-y-2">
+                  <div key={imageUrl} className="space-y-2">
                     <div className="relative">
                       <Image
                         src={imageUrl}
