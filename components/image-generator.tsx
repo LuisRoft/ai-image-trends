@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Sparkles,
   Zap,
+  Lock,
 } from 'lucide-react';
 import { Authenticated, Unauthenticated, useQuery } from 'convex/react';
 import { SignInButton, useUser } from '@clerk/nextjs';
@@ -50,7 +51,9 @@ interface PromptInput {
 }
 
 interface ImageGeneratorProps {
-  prompt: Doc<'prompts'>;
+  prompt: Doc<'prompts'> & {
+    prompt: string | null;
+  };
   onBack: () => void;
 }
 
@@ -89,7 +92,7 @@ export default function ImageGenerator({
 }: ImageGeneratorProps) {
   const { user, isLoaded } = useUser();
   const router = useRouter();
-  const [editablePrompt, setEditablePrompt] = useState(prompt.prompt);
+  const [editablePrompt, setEditablePrompt] = useState(prompt.prompt ?? '');
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
@@ -112,6 +115,7 @@ export default function ImageGenerator({
     userApiKey !== undefined &&
     userApiKey !== null &&
     userApiKey.hasKey;
+  const isPromptUnlocked = prompt.prompt !== null;
 
   const currentModel = useMemo(
     () =>
@@ -123,6 +127,10 @@ export default function ImageGenerator({
     () => uploadedImages.map((file) => URL.createObjectURL(file)),
     [uploadedImages]
   );
+
+  useEffect(() => {
+    setEditablePrompt(prompt.prompt ?? '');
+  }, [prompt._id, prompt.prompt]);
 
   useEffect(() => {
     return () => {
@@ -484,32 +492,62 @@ export default function ImageGenerator({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="prompt-editor">Editor de Prompt</Label>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={copyPromptToClipboard}
-                  className="h-8"
-                >
-                  {isCopied ? (
-                    <>
-                      <Check className="h-3 w-3 mr-1" />
-                      Copiado
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-3 w-3 mr-1" />
-                      Copiar
-                    </>
-                  )}
-                </Button>
+                {isPromptUnlocked && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={copyPromptToClipboard}
+                    className="h-8"
+                  >
+                    {isCopied ? (
+                      <>
+                        <Check className="h-3 w-3 mr-1" />
+                        Copiado
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3 w-3 mr-1" />
+                        Copiar
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
-              <Textarea
-                id="prompt-editor"
-                placeholder="Edita tu prompt aquí..."
-                value={editablePrompt}
-                onChange={(e) => setEditablePrompt(e.target.value)}
-                className="min-h-[120px] font-mono text-sm"
-              />
+              <div className="relative py-4">
+                <Textarea
+                  id="prompt-editor"
+                  placeholder="Edita tu prompt aquí..."
+                  value={
+                    isPromptUnlocked
+                      ? editablePrompt
+                      : 'Prompt bloqueado. Inicia sesión para verlo y editarlo.'
+                  }
+                  onChange={(e) => setEditablePrompt(e.target.value)}
+                  readOnly={!isPromptUnlocked}
+                  className={`min-h-[120px] font-mono text-sm transition ${
+                    isPromptUnlocked
+                      ? ''
+                      : 'select-none blur-sm pointer-events-none text-transparent shadow-[inset_0_0_0_1px_rgba(113,113,122,0.15)]'
+                  }`}
+                />
+                {!isPromptUnlocked && (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-md border border-dashed border-zinc-200 bg-white/80 backdrop-blur-[2px]">
+                    <div className="max-w-sm text-center">
+                      <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900 text-white shadow-sm">
+                        <Lock className="h-4 w-4" />
+                      </div>
+                      <p className="text-sm font-semibold text-zinc-900">
+                        Inicia sesión para ver este prompt
+                      </p>
+                      <SignInButton mode="modal">
+                        <Button className="mt-3" size="sm">
+                          Ver prompt
+                        </Button>
+                      </SignInButton>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Model Selector */}

@@ -62,10 +62,25 @@ export const getPrompts = query({
 export const getPromptById = query({
   args: { id: v.string() },
   handler: async (ctx, args) => {
-    return await ctx.db
+    const prompt = await ctx.db
       .query('prompts')
       .withIndex('by_prompt_id', (q) => q.eq('id', args.id))
       .first();
+
+    if (!prompt) {
+      return null;
+    }
+
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      return {
+        ...prompt,
+        prompt: null,
+      };
+    }
+
+    return prompt;
   },
 });
 
