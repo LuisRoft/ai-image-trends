@@ -22,7 +22,7 @@ export default defineSchema({
     tags: v.array(v.string()),
     author: v.string(),
     sourceUrl: v.string(),
-    imageUrl: v.string(),
+    previewStorageId: v.optional(v.id('_storage')),
     searchableText: v.optional(v.string()),
   })
     .index('by_prompt_id', ['id'])

@@ -224,7 +224,7 @@ export const confirmDailyCreditGeneration = internalMutation({
     await ctx.db.patch(usageDoc._id, {
       usedCount: nextUsedCount,
       pendingCount: nextPendingCount,
-      ...(nextPendingCount > 0 ? { pendingStartedAt: usageDoc.pendingStartedAt } : {}),
+      pendingStartedAt: nextPendingCount > 0 ? usageDoc.pendingStartedAt : undefined,
       ...(hasReachedLimit
         ? {
             cooldownStartedAt: now,
@@ -275,7 +275,7 @@ export const releaseDailyCreditGeneration = internalMutation({
 
     await ctx.db.patch(usageDoc._id, {
       pendingCount: nextPendingCount,
-      ...(nextPendingCount > 0 ? { pendingStartedAt: usageDoc.pendingStartedAt } : {}),
+      pendingStartedAt: nextPendingCount > 0 ? usageDoc.pendingStartedAt : undefined,
       dayUtc: getUtcDayKey(now),
     });
 

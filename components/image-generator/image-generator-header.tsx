@@ -27,13 +27,17 @@ export function ImageGeneratorHeader({
       </Button>
 
       <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-zinc-100">
-        <Image
-          src={prompt.imageUrl}
-          alt={prompt.title}
-          fill
-          sizes="56px"
-          className="object-cover"
-        />
+        {prompt.previewUrl ? (
+          <Image
+            src={prompt.previewUrl}
+            alt={prompt.title}
+            fill
+            sizes="56px"
+            className="object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-zinc-200" />
+        )}
       </div>
 
       <div className="min-w-0 flex-1">
