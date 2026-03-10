@@ -41,13 +41,17 @@ export default defineSchema({
 
   dailyGenerationUsage: defineTable({
     userId: v.string(),
-    dayUtc: v.string(),
+    dayUtc: v.optional(v.string()),
     usedCount: v.number(),
     pendingCount: v.number(),
     pendingStartedAt: v.optional(v.number()),
+    cooldownStartedAt: v.optional(v.number()),
+    resetAt: v.optional(v.number()),
     lastUsedAt: v.optional(v.number()),
     lastModel: v.optional(v.string()),
     lastPromptId: v.optional(v.string()),
     lastSource: v.optional(v.string()),
-  }).index('by_user_day', ['userId', 'dayUtc']),
+  })
+    .index('by_user_id', ['userId'])
+    .index('by_user_day', ['userId', 'dayUtc']),
 });

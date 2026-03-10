@@ -128,11 +128,12 @@ export default function ApiKeySettings() {
 
         <Alert>
           <Info className="h-4 w-4" />
-          <AlertTitle>Créditos diarios incluidos</AlertTitle>
+          <AlertTitle>Créditos incluidos</AlertTitle>
           <AlertDescription>
-            Tu cuenta tiene 10 créditos diarios para generar imágenes con la
-            API de la app. Si usas tu propia API key, esas generaciones no
-            consumen créditos.
+            Tu cuenta tiene 10 créditos para generar imágenes con la API de la
+            app. Cuando los agotas, se recargan 24 horas después de consumir el
+            último. Si usas tu propia API key, esas generaciones no consumen
+            créditos.
           </AlertDescription>
         </Alert>
 

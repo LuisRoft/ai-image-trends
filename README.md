@@ -13,7 +13,7 @@
   <a href="https://github.com/LuisRoft/ai-image-trends">Código</a>
 </p>
 
-Explora prompts curados y genera imágenes al instante con Gemini. La app incluye créditos diarios y también permite usar una API key propia para seguir generando sin límites del proyecto.
+Explora prompts curados y genera imágenes al instante con Gemini. La app incluye 10 créditos por ciclo y también permite usar una API key propia para seguir generando sin límites del proyecto.
 
 ---
 
@@ -39,7 +39,7 @@ Variables relevantes:
 - `CONVEX_DEPLOY_KEY`: deploy/admin key para que Next llame funciones internas de Convex.
 - `ENCRYPTION_SECRET`: secreto usado por Convex para encriptar y desencriptar la API key personal del usuario.
 
-En la app puedes generar con créditos diarios o, si prefieres, ir a **Configuración** y añadir tu API key de [Google AI Studio](https://aistudio.google.com/apikey).
+En la app puedes generar con créditos de la app. Cuando agotas los 10, se recargan 24 horas después del último crédito consumido. Si prefieres, puedes ir a **Configuración** y añadir tu API key de [Google AI Studio](https://aistudio.google.com/apikey).
 
 ### Stack
 

@@ -26,7 +26,7 @@ export default function SettingsPage() {
           </h1>
           <p className="text-gray-600">
             Administra tu API key de Gemini para generar sin consumir tus
-            créditos diarios
+            créditos de la app
           </p>
         </div>
 

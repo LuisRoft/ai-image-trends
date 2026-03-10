@@ -26,7 +26,7 @@ type CreditsStatus = {
   ok: boolean;
   usedCount: number;
   remainingCount: number;
-  resetAtUtc: number;
+  resetAtUtc: number | null;
 };
 
 type ConvexAdminClient = {
@@ -175,7 +175,7 @@ export async function POST(request: Request) {
         ok: boolean;
         reason?: 'pending_in_progress' | 'limit_reached';
         remainingCount: number;
-        resetAtUtc: number;
+        resetAtUtc: number | null;
       }>(
         internal.generationCredits.reserveDailyCreditGeneration,
         {
@@ -202,10 +202,10 @@ export async function POST(request: Request) {
 
         return NextResponse.json(
           {
-            error: 'No credits available',
-            details:
-              'No tienes créditos disponibles. Espera el reinicio diario o usa tu API key.',
-            noCredits: true,
+              error: 'No credits available',
+              details:
+                'No tienes créditos disponibles. Espera 24 horas desde que agotaste tus créditos o usa tu API key.',
+              noCredits: true,
             remainingCount: reservation.remainingCount,
             resetAtUtc: reservation.resetAtUtc,
           },
