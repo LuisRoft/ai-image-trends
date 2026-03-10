@@ -1,4 +1,4 @@
-import { mutation, query, type QueryCtx } from './_generated/server';
+import { query, type QueryCtx } from './_generated/server';
 import { paginationOptsValidator } from 'convex/server';
 import { v } from 'convex/values';
 
@@ -11,7 +11,6 @@ async function attachPreviewUrl<T extends { previewStorageId?: string }>(
     : null;
   return { ...prompt, previewUrl };
 }
-
 
 export const getPrompts = query({
   args: {
@@ -126,4 +125,3 @@ export const getPromptsSearch = query({
     return { page: pageWithPreview, totalCount, hasMore };
   },
 });
-
