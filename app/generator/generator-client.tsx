@@ -6,6 +6,7 @@ import ImageGenerator from '@/components/image-generator';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { ImageGeneratorSkeleton } from '@/components/skeletons/image-generator-skeleton';
+import type { PromptWithAuthVisibility } from '@/lib/types/prompt';
 
 function GeneratorContent() {
   const searchParams = useSearchParams();
@@ -46,7 +47,15 @@ function GeneratorContent() {
     router.push('/');
   };
 
-  return <ImageGenerator prompt={prompt} onBack={handleBack} />;
+  const visiblePrompt: PromptWithAuthVisibility = prompt;
+
+  return (
+    <ImageGenerator
+      key={visiblePrompt._id}
+      prompt={visiblePrompt}
+      onBack={handleBack}
+    />
+  );
 }
 
 export default function GeneratorClient() {

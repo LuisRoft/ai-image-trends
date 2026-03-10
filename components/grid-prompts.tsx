@@ -21,11 +21,11 @@ import {
 } from '@/components/ui/select';
 import { usePaginatedQuery, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
-import type { Doc } from '@/convex/_generated/dataModel';
+import type { PromptWithPreviewUrl } from '@/lib/types/prompt';
 import { PromptCardSkeleton } from '@/components/skeletons/prompt-grid-skeleton';
 import { useDebounce } from '@/lib/use-debounce';
 
-type PromptDoc = Doc<'prompts'>;
+type PromptDoc = PromptWithPreviewUrl;
 
 const ITEMS_PER_PAGE = 8;
 const SEARCH_DEBOUNCE_MS = 300;

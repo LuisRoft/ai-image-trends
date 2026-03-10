@@ -1,13 +1,11 @@
 import { memo } from 'react';
 import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
-import type { Doc } from '@/convex/_generated/dataModel';
-
-type PromptDoc = Doc<'prompts'>;
+import type { PromptWithPreviewUrl } from '@/lib/types/prompt';
 
 interface PromptCardProps {
-  prompt: PromptDoc;
-  onClick: (prompt: PromptDoc) => void;
+  prompt: PromptWithPreviewUrl;
+  onClick: (prompt: PromptWithPreviewUrl) => void;
 }
 
 const PromptCard = memo(function PromptCard({
@@ -19,13 +17,17 @@ const PromptCard = memo(function PromptCard({
       className="group relative cursor-pointer overflow-hidden rounded-2xl aspect-[3/4] bg-zinc-100 shadow-sm hover:shadow-xl transition-shadow duration-300"
       onClick={() => onClick(prompt)}
     >
-      <Image
-        src={prompt.imageUrl}
-        alt={prompt.title}
-        fill
-        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-        className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-      />
+      {prompt.previewUrl ? (
+        <Image
+          src={prompt.previewUrl}
+          alt={prompt.title}
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+          className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+        />
+      ) : (
+        <div className="absolute inset-0 bg-zinc-200" />
+      )}
 
       <div className="absolute top-3 left-3 z-10">
         <span className="inline-flex items-center rounded-full bg-white/90 backdrop-blur-sm px-2.5 py-1 text-xs font-medium text-zinc-800 shadow-sm">

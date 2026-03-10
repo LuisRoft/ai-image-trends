@@ -1,46 +1,16 @@
-import { mutation, query } from './_generated/server';
+import { query, type QueryCtx } from './_generated/server';
 import { paginationOptsValidator } from 'convex/server';
 import { v } from 'convex/values';
 
-export const addPrompts = mutation({
-  args: {
-    prompts: v.array(
-      v.object({
-        id: v.string(),
-        title: v.string(),
-        description: v.string(),
-        category: v.string(),
-        prompt: v.string(),
-        inputs: v.array(
-          v.object({
-            key: v.string(),
-            type: v.string(),
-            description: v.string(),
-            required: v.boolean(),
-            placeholder: v.optional(v.string()),
-          })
-        ),
-        outputType: v.string(),
-        difficulty: v.string(),
-        tags: v.array(v.string()),
-        author: v.string(),
-        sourceUrl: v.string(),
-        imageUrl: v.string(),
-      })
-    ),
-  },
-  handler: async (ctx, args) => {
-    for (const prompt of args.prompts) {
-      const searchableText = [
-        prompt.title,
-        prompt.description,
-        prompt.category,
-        ...prompt.tags,
-      ].join(' ');
-      await ctx.db.insert('prompts', { ...prompt, searchableText });
-    }
-  },
-});
+async function attachPreviewUrl<T extends { previewStorageId?: string }>(
+  ctx: QueryCtx,
+  prompt: T
+): Promise<T & { previewUrl: string | null }> {
+  const previewUrl = prompt.previewStorageId
+    ? await ctx.storage.getUrl(prompt.previewStorageId)
+    : null;
+  return { ...prompt, previewUrl };
+}
 
 export const getPrompts = query({
   args: {
@@ -55,17 +25,37 @@ export const getPrompts = query({
             .withIndex('by_category', (q) => q.eq('category', args.category!))
         : ctx.db.query('prompts');
 
-    return await baseQuery.order('asc').paginate(args.paginationOpts);
+    const result = await baseQuery.order('asc').paginate(args.paginationOpts);
+    const page = await Promise.all(
+      result.page.map((prompt) => attachPreviewUrl(ctx, prompt))
+    );
+    return { ...result, page };
   },
 });
 
 export const getPromptById = query({
   args: { id: v.string() },
   handler: async (ctx, args) => {
-    return await ctx.db
+    const prompt = await ctx.db
       .query('prompts')
       .withIndex('by_prompt_id', (q) => q.eq('id', args.id))
       .first();
+
+    if (!prompt) {
+      return null;
+    }
+
+    const withPreview = await attachPreviewUrl(ctx, prompt);
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      return {
+        ...withPreview,
+        prompt: null,
+      };
+    }
+
+    return withPreview;
   },
 });
 
@@ -112,7 +102,11 @@ export const getPromptsSearch = query({
       const page = all.slice(args.offset, args.offset + args.numItems);
       const hasMore = args.offset + args.numItems < totalCount;
 
-      return { page, totalCount, hasMore };
+      const pageWithPreview = await Promise.all(
+        page.map((prompt) => attachPreviewUrl(ctx, prompt))
+      );
+
+      return { page: pageWithPreview, totalCount, hasMore };
     }
 
     let items = await ctx.db.query('prompts').collect();
@@ -124,26 +118,10 @@ export const getPromptsSearch = query({
     const page = items.slice(args.offset, args.offset + args.numItems);
     const hasMore = args.offset + args.numItems < totalCount;
 
-    return { page, totalCount, hasMore };
-  },
-});
+    const pageWithPreview = await Promise.all(
+      page.map((prompt) => attachPreviewUrl(ctx, prompt))
+    );
 
-export const backfillSearchableText = mutation({
-  handler: async (ctx) => {
-    const prompts = await ctx.db.query('prompts').collect();
-    let updated = 0;
-    for (const p of prompts) {
-      if (!p.searchableText) {
-        const searchableText = [
-          p.title,
-          p.description,
-          p.category,
-          ...p.tags,
-        ].join(' ');
-        await ctx.db.patch(p._id, { searchableText });
-        updated++;
-      }
-    }
-    return { updated, total: prompts.length };
+    return { page: pageWithPreview, totalCount, hasMore };
   },
 });

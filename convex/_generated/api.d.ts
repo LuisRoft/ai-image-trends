@@ -13,6 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as generationCredits from "../generationCredits.js";
 import type * as prompts from "../prompts.js";
 import type * as userApiKeys from "../userApiKeys.js";
 
@@ -25,6 +26,7 @@ import type * as userApiKeys from "../userApiKeys.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  generationCredits: typeof generationCredits;
   prompts: typeof prompts;
   userApiKeys: typeof userApiKeys;
 }>;

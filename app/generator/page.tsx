@@ -39,7 +39,9 @@ export async function generateMetadata({
     `/api/og` +
     `?title=${encodeURIComponent(prompt.title)}` +
     `&description=${encodeURIComponent(prompt.description)}` +
-    `&imageUrl=${encodeURIComponent(prompt.imageUrl)}`;
+    (prompt.previewUrl
+      ? `&imageUrl=${encodeURIComponent(prompt.previewUrl)}`
+      : '');
 
   return {
     title: prompt.title,

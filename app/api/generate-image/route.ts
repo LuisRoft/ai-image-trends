@@ -1,50 +1,85 @@
+import { generateText } from 'ai';
 import {
-  GoogleGenAI,
-  GenerateContentResponse,
-  Part,
-  Modality,
-} from '@google/genai';
+  createGoogleGenerativeAI,
+  type GoogleLanguageModelOptions,
+} from '@ai-sdk/google';
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { ConvexHttpClient } from 'convex/browser';
-import { api } from '@/convex/_generated/api';
+import { internal } from '@/convex/_generated/api';
 
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 const VALID_MODELS = ['gemini-2.5-flash-image', 'gemini-3-pro-image-preview'];
 const VALID_IMAGE_SIZES = ['1K', '2K', '4K'] as const;
+const VALID_GENERATION_SOURCES = ['credits', 'user_api_key'] as const;
+const SUPPORTED_IMAGE_FORMATS = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/gif',
+  'image/bmp',
+];
 
-const fileToGenerativePart = async (file: File) => {
-  const buffer = await file.arrayBuffer();
-  let mimeType = file.type;
+type GenerationSource = (typeof VALID_GENERATION_SOURCES)[number];
+type SupportedModel = (typeof VALID_MODELS)[number];
 
-  // Map unsupported formats to supported ones
-  const supportedFormats = [
-    'image/jpeg',
-    'image/png',
-    'image/gif',
-    'image/bmp',
-  ];
+type CreditsStatus = {
+  ok: boolean;
+  usedCount: number;
+  remainingCount: number;
+  resetAtUtc: number | null;
+};
 
-  if (!supportedFormats.includes(file.type)) {
-    // For unsupported formats like AVIF, WebP, treat as JPEG
-    mimeType = 'image/jpeg';
-    console.warn(`Unsupported image format ${file.type}, treating as JPEG`);
+type ConvexAdminClient = {
+  setAdminAuth: (token: string) => void;
+  query: <T>(queryRef: unknown, args?: Record<string, unknown>) => Promise<T>;
+  mutation: <T>(
+    mutationRef: unknown,
+    args?: Record<string, unknown>
+  ) => Promise<T>;
+};
+
+const normalizeModel = (model: string): SupportedModel =>
+  VALID_MODELS.includes(model) ? (model as SupportedModel) : VALID_MODELS[0];
+
+const fileToPromptImage = async (file: File) => {
+  if (!SUPPORTED_IMAGE_FORMATS.includes(file.type)) {
+    throw new Error(`Unsupported image format: ${file.type}`);
   }
 
-  const base64EncodedData = Buffer.from(buffer).toString('base64');
-  return {
-    inlineData: { data: base64EncodedData, mimeType },
-  };
+  const buffer = await file.arrayBuffer();
+  return Buffer.from(buffer);
+};
+
+const buildConvexAdminClient = () => {
+  if (!process.env.NEXT_PUBLIC_CONVEX_URL) {
+    throw new Error('Missing NEXT_PUBLIC_CONVEX_URL environment variable');
+  }
+
+  if (!process.env.CONVEX_DEPLOY_KEY) {
+    throw new Error('Missing CONVEX_DEPLOY_KEY environment variable');
+  }
+
+  const convex = new ConvexHttpClient(
+    process.env.NEXT_PUBLIC_CONVEX_URL
+  ) as unknown as ConvexAdminClient;
+  convex.setAdminAuth(process.env.CONVEX_DEPLOY_KEY);
+  return convex;
 };
 
 export async function POST(request: Request) {
+  let convex: ConvexAdminClient | null = null;
+  let selectedSource: GenerationSource | null = null;
+  let selectedModel: SupportedModel = VALID_MODELS[0];
+  let promptId: string | undefined;
+  let userId: string | null = null;
+  let hasReservedCredit = false;
+
   try {
-    // Start independent work in parallel to reduce route latency.
     const [authData, formData] = await Promise.all([
       auth(),
       request.formData(),
     ]);
-    const { userId } = authData;
+    userId = authData.userId;
 
     if (!userId) {
       return NextResponse.json(
@@ -56,40 +91,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get user's API key from Convex
-    const userApiKeyData = await convex.query(api.userApiKeys.getActualApiKey, {
-      userId,
-    });
-
-    if (!userApiKeyData || !userApiKeyData.apiKey) {
-      return NextResponse.json(
-        {
-          error: 'API Key not configured',
-          details:
-            'Please configure your Gemini API key in settings to generate images',
-          needsApiKey: true,
-        },
-        { status: 403 }
-      );
-    }
-
     const prompt = formData.get('prompt') as string;
     const images = formData.getAll('images') as File[];
     const aspectRatio = (formData.get('aspectRatio') as string) || '1:1';
     const imageSize = (formData.get('imageSize') as string) || '1K';
-    const model = (formData.get('model') as string) || 'gemini-2.5-flash-image';
-
-    // Validate model selection
-    const selectedModel = VALID_MODELS.includes(model)
-      ? model
-      : 'gemini-2.5-flash-image';
-    const selectedImageSize = VALID_IMAGE_SIZES.includes(
-      imageSize as (typeof VALID_IMAGE_SIZES)[number]
-    )
-      ? imageSize
-      : '1K';
-    const normalizedImageSize =
-      selectedModel === 'gemini-3-pro-image-preview' ? selectedImageSize : '1K';
+    const model = (formData.get('model') as string) || VALID_MODELS[0];
+    const generationSource = formData.get('generationSource') as string;
+    const rawPromptId = formData.get('promptId') as string | null;
+    promptId = rawPromptId?.trim() || undefined;
 
     if (!prompt?.trim()) {
       return NextResponse.json(
@@ -101,40 +110,241 @@ export async function POST(request: Request) {
       );
     }
 
-    // Initialize Google GenAI with user's API key
-    const genAI = new GoogleGenAI({ apiKey: userApiKeyData.apiKey });
+    if (
+      !VALID_GENERATION_SOURCES.includes(
+        generationSource as GenerationSource
+      )
+    ) {
+      return NextResponse.json(
+        {
+          error: 'Invalid generation source',
+          details: 'Select a valid generation source',
+        },
+        { status: 400 }
+      );
+    }
 
-    const imageParts = await Promise.all(
-      images.map((file) => fileToGenerativePart(file))
-    );
-    const textPart: Part = { text: prompt };
+    selectedSource = generationSource as GenerationSource;
+    selectedModel = normalizeModel(model);
+    const normalizedImageSize: '1K' | '2K' | '4K' = VALID_IMAGE_SIZES.includes(
+      imageSize as (typeof VALID_IMAGE_SIZES)[number]
+    )
+      ? (imageSize as '1K' | '2K' | '4K')
+      : '1K';
 
-    const response: GenerateContentResponse =
-      await genAI.models.generateContent({
-        model: selectedModel,
-        contents: [{ parts: [textPart, ...imageParts] }],
-        config: {
-          responseModalities: [Modality.IMAGE, Modality.TEXT],
+    convex = buildConvexAdminClient();
+
+    let apiKeyToUse: string;
+
+    if (selectedSource === 'user_api_key') {
+      const userApiKeyData = await convex.query<{ apiKey: string } | null>(
+        internal.userApiKeys.getActualApiKey,
+        {
+          userId,
+        }
+      );
+
+      if (!userApiKeyData?.apiKey) {
+        return NextResponse.json(
+          {
+            error: 'API Key not configured',
+            details:
+              'Please configure your Gemini API key in settings to generate images',
+            needsApiKey: true,
+          },
+          { status: 403 }
+        );
+      }
+
+      apiKeyToUse = userApiKeyData.apiKey;
+    } else {
+      const appApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+
+      if (!appApiKey) {
+        return NextResponse.json(
+          {
+            error: 'App configuration error',
+            details:
+              'Falta GOOGLE_GENERATIVE_AI_API_KEY en el servidor para generar con créditos.',
+          },
+          { status: 500 }
+        );
+      }
+
+      const reservation = await convex.mutation<{
+        ok: boolean;
+        reason?: 'pending_in_progress' | 'limit_reached';
+        remainingCount: number;
+        resetAtUtc: number | null;
+      }>(
+        internal.generationCredits.reserveDailyCreditGeneration,
+        {
+          userId,
+          model: selectedModel,
+          promptId,
+        }
+      );
+
+      if (!reservation.ok) {
+        if (reservation.reason === 'pending_in_progress') {
+          return NextResponse.json(
+            {
+              error: 'Generation already in progress',
+              details:
+                'Ya hay una generación con créditos en progreso. Espera a que termine.',
+              generationInProgress: true,
+              remainingCount: reservation.remainingCount,
+              resetAtUtc: reservation.resetAtUtc,
+            },
+            { status: 409 }
+          );
+        }
+
+        return NextResponse.json(
+          {
+              error: 'No credits available',
+              details:
+                'No tienes créditos disponibles. Espera 24 horas desde que agotaste tus créditos o usa tu API key.',
+              noCredits: true,
+            remainingCount: reservation.remainingCount,
+            resetAtUtc: reservation.resetAtUtc,
+          },
+          { status: 403 }
+        );
+      }
+
+      hasReservedCredit = true;
+      apiKeyToUse = appApiKey;
+    }
+
+    const google = createGoogleGenerativeAI({ apiKey: apiKeyToUse });
+    const promptImages = await Promise.all(images.map((file) => fileToPromptImage(file)));
+
+    const result = await generateText({
+      model: google(selectedModel),
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            ...promptImages.map((image, index) => ({
+              type: 'file' as const,
+              data: image,
+              mediaType: images[index]?.type || 'image/jpeg',
+            })),
+          ],
+        },
+      ],
+      providerOptions: {
+        google: {
+          responseModalities: ['IMAGE'],
           imageConfig: {
-            aspectRatio: aspectRatio,
+            aspectRatio: aspectRatio as
+              | '1:1'
+              | '2:3'
+              | '3:2'
+              | '3:4'
+              | '4:3'
+              | '4:5'
+              | '5:4'
+              | '9:16'
+              | '16:9'
+              | '21:9',
             imageSize: normalizedImageSize,
           },
-        } as Record<string, unknown>, // imageConfig not in SDK types yet
-      });
+        } satisfies GoogleLanguageModelOptions,
+      },
+    });
 
-    const result: Part[] = response.candidates?.[0]?.content?.parts || [];
+    const generatedImages = result.files.filter((file) =>
+      file.mediaType.startsWith('image/')
+    );
 
-    return NextResponse.json({ result });
+    if (generatedImages.length === 0) {
+      throw new Error('No image generated');
+    }
+
+    let creditsStatus: CreditsStatus | null = null;
+
+    if (selectedSource === 'credits' && hasReservedCredit) {
+      creditsStatus = await convex.mutation<CreditsStatus>(
+        internal.generationCredits.confirmDailyCreditGeneration,
+        {
+          userId,
+          model: selectedModel,
+          promptId,
+        }
+      );
+      hasReservedCredit = false;
+    }
+
+    return NextResponse.json({
+      result: generatedImages.map((image) => ({
+        inlineData: {
+          mimeType: image.mediaType,
+          data: image.base64,
+        },
+      })),
+      creditsStatus,
+    });
   } catch (error) {
     console.error('Error generating image:', error);
+
+    if (
+      selectedSource === 'credits' &&
+      hasReservedCredit &&
+      convex &&
+      userId
+    ) {
+      try {
+        await convex.mutation(internal.generationCredits.releaseDailyCreditGeneration, {
+          userId,
+        });
+      } catch (releaseError) {
+        console.error('Failed to release reserved credit:', releaseError);
+      }
+    }
+
     const errorMessage =
       error instanceof Error ? error.message : 'An unknown error occurred';
 
-    // Check if error is related to invalid API key
+    if (errorMessage.includes('No image generated')) {
+      return NextResponse.json(
+        {
+          error: 'No image generated',
+          details:
+            'La generación no devolvió imágenes válidas. Inténtalo de nuevo.',
+        },
+        { status: 502 }
+      );
+    }
+
+    if (errorMessage.includes('Unsupported image format:')) {
+      return NextResponse.json(
+        {
+          error: 'Unsupported image format',
+          details:
+            'Se recibió una imagen en un formato no compatible. Usa JPEG, PNG, GIF o BMP.',
+        },
+        { status: 400 }
+      );
+    }
+
     if (
       errorMessage.includes('API key') ||
       errorMessage.includes('authentication')
     ) {
+      if (selectedSource === 'credits') {
+        return NextResponse.json(
+          {
+            error: 'Generation service unavailable',
+            details:
+              'El servicio de generación no está disponible en este momento. Inténtalo más tarde.',
+          },
+          { status: 503 }
+        );
+      }
+
       return NextResponse.json(
         {
           error: 'Invalid API Key',
@@ -148,7 +358,8 @@ export async function POST(request: Request) {
 
     if (
       errorMessage.includes('is not found for API version') ||
-      errorMessage.includes('NOT_FOUND')
+      errorMessage.includes('NOT_FOUND') ||
+      errorMessage.includes('Model not found')
     ) {
       return NextResponse.json(
         {
@@ -160,8 +371,34 @@ export async function POST(request: Request) {
       );
     }
 
+    if (errorMessage.includes('ENCRYPTION_SECRET environment variable is required')) {
+      return NextResponse.json(
+        {
+          error: 'App configuration error',
+          details:
+            'Falta ENCRYPTION_SECRET en Convex. Es necesaria para leer la API key guardada del usuario.',
+        },
+        { status: 500 }
+      );
+    }
+
+    if (errorMessage.includes('Missing CONVEX_DEPLOY_KEY environment variable')) {
+      return NextResponse.json(
+        {
+          error: 'App configuration error',
+          details:
+            'Falta CONVEX_DEPLOY_KEY en Next.js. Es necesaria para acceder a las funciones internas de Convex.',
+        },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
-      { error: 'Internal Server Error', details: errorMessage },
+      {
+        error: 'Internal Server Error',
+        details:
+          'No se pudo completar la generación en este momento. Inténtalo de nuevo.',
+      },
       { status: 500 }
     );
   }

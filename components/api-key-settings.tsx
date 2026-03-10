@@ -40,7 +40,8 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export default function ApiKeySettings() {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
+  const canManageApiKey = Boolean(isLoaded && user);
   const [apiKey, setApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -53,7 +54,10 @@ export default function ApiKeySettings() {
 
   const saveApiKey = useMutation(api.userApiKeys.saveApiKey);
   const deleteApiKey = useMutation(api.userApiKeys.deleteApiKey);
-  const existingApiKey = useQuery(api.userApiKeys.getApiKey);
+  const existingApiKey = useQuery(
+    api.userApiKeys.getApiKey,
+    isLoaded && user ? {} : 'skip'
+  );
 
   const handleSave = async () => {
     if (!user?.id) return;
@@ -105,11 +109,34 @@ export default function ApiKeySettings() {
           Configuración de API Key de Gemini
         </CardTitle>
         <CardDescription>
-          Configura tu API key personal de Google Gemini para generar imágenes.
-          Tu API key se almacena de forma segura y encriptada.
+          Configura tu API key personal de Google Gemini para generar imágenes
+          sin consumir tus créditos diarios. Tu API key se almacena de forma
+          segura y encriptada.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {isLoaded && !user ? (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Inicia sesión para administrar tu API key</AlertTitle>
+            <AlertDescription>
+              Debes estar logeado para guardar, ver o eliminar tu API key de
+              Gemini.
+            </AlertDescription>
+          </Alert>
+        ) : null}
+
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertTitle>Créditos incluidos</AlertTitle>
+          <AlertDescription>
+            Tu cuenta tiene 10 créditos para generar imágenes con la API de la
+            app. Cuando los agotas, se recargan 24 horas después de consumir el
+            último. Si usas tu propia API key, esas generaciones no consumen
+            créditos.
+          </AlertDescription>
+        </Alert>
+
         {/* Instructions Alert */}
         <Alert>
           <Info className="h-4 w-4" />
@@ -214,8 +241,8 @@ export default function ApiKeySettings() {
                       </AlertDialogTitle>
                       <AlertDialogDescription>
                         Esta acción eliminará tu API key de forma permanente. No
-                        podrás generar imágenes hasta que agregues una nueva API
-                        key de Google Gemini.
+                        podrás volver a generar sin consumir créditos hasta que
+                        agregues una nueva API key de Google Gemini.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -247,6 +274,7 @@ export default function ApiKeySettings() {
                 placeholder="AIzaSy..."
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
+                disabled={!canManageApiKey}
                 className="pr-10 font-mono text-sm"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && apiKey.trim() && !isSaving) {
@@ -257,6 +285,7 @@ export default function ApiKeySettings() {
               <button
                 type="button"
                 onClick={() => setShowApiKey(!showApiKey)}
+                disabled={!canManageApiKey}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
                 aria-label={showApiKey ? 'Ocultar API key' : 'Mostrar API key'}
               >
@@ -275,7 +304,7 @@ export default function ApiKeySettings() {
 
           <Button
             onClick={handleSave}
-            disabled={isSaving || !apiKey.trim()}
+            disabled={!canManageApiKey || isSaving || !apiKey.trim()}
             className="w-full"
             size="lg"
           >
@@ -312,7 +341,8 @@ export default function ApiKeySettings() {
         <Alert>
           <AlertDescription className="text-xs">
             Tu API key se almacena encriptada en nuestra base de datos y solo tú
-            tú puedes acceder a ella. Nunca compartimos tu API key con terceros.
+            puedes acceder a ella. Nunca compartimos tu API key con terceros ni
+            la usamos para consumir tus créditos diarios.
           </AlertDescription>
         </Alert>
       </CardContent>
