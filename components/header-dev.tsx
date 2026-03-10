@@ -44,41 +44,6 @@ export default function HeaderDev() {
       </Link>
 
       <nav className="flex items-center gap-1 sm:gap-2 shrink-0 min-w-0">
-        <div className="hidden sm:flex items-center gap-1 rounded-full bg-white/80 backdrop-blur-sm px-2 shadow-sm">
-          <a
-            href="https://github.com/LuisRoft/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-2 text-zinc-500 hover:text-gray-800 rounded-full transition-colors"
-            aria-label="GitHub"
-          >
-            <Github className="size-4" />
-          </a>
-          <a
-            href="https://x.com/luisroftl"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-2 text-zinc-500 hover:text-gray-800 rounded-full transition-colors"
-            aria-label="X / Twitter"
-          >
-            <Twitter className="size-4" />
-          </a>
-          <a
-            href="https://www.linkedin.com/in/luisvelasco27/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-2 text-zinc-500 hover:text-gray-800 rounded-full transition-colors"
-            aria-label="LinkedIn"
-          >
-            <Linkedin className="size-4" />
-          </a>
-        </div>
-
-        <div
-          className="hidden sm:block h-6 w-px bg-zinc-200 shrink-0"
-          aria-hidden
-        />
-
         <div className="flex justify-end min-w-0">
           {!isLoaded ? (
             <div
@@ -138,6 +103,41 @@ export default function HeaderDev() {
               </SignedIn>
             </>
           )}
+        </div>
+
+        <div
+          className="hidden sm:block h-6 w-px bg-zinc-200 shrink-0"
+          aria-hidden
+        />
+
+        <div className="hidden sm:flex items-center gap-1 rounded-full bg-white/80 backdrop-blur-sm px-2 shadow-sm">
+          <a
+            href="https://github.com/LuisRoft/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 text-zinc-500 hover:text-gray-800 rounded-full transition-colors"
+            aria-label="GitHub"
+          >
+            <Github className="size-4" />
+          </a>
+          <a
+            href="https://x.com/luisroftl"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 text-zinc-500 hover:text-gray-800 rounded-full transition-colors"
+            aria-label="X / Twitter"
+          >
+            <Twitter className="size-4" />
+          </a>
+          <a
+            href="https://www.linkedin.com/in/luisvelasco27/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 text-zinc-500 hover:text-gray-800 rounded-full transition-colors"
+            aria-label="LinkedIn"
+          >
+            <Linkedin className="size-4" />
+          </a>
         </div>
       </nav>
     </header>

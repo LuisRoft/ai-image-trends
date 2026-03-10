@@ -49,7 +49,13 @@ function GeneratorContent() {
 
   const visiblePrompt: PromptWithAuthVisibility = prompt;
 
-  return <ImageGenerator prompt={visiblePrompt} onBack={handleBack} />;
+  return (
+    <ImageGenerator
+      key={visiblePrompt._id}
+      prompt={visiblePrompt}
+      onBack={handleBack}
+    />
+  );
 }
 
 export default function GeneratorClient() {
